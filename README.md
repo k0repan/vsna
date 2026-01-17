@@ -1,0 +1,1 @@
+Virtual Storage Network Access is an open-source development project with completely free communication capabilities in the virtual local space. This includes file sharing, setting up a local device environment, local video chats, and chat rooms.

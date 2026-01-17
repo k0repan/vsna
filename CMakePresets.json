@@ -2,6 +2,23 @@
     "version": 3,
     "configurePresets": [
         {
+            "name": "win",
+            "hidden": true,
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                
+                "VCPKG_HOST_TRIPLET": "x64-windows"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [
+                        "Windows"
+                    ]
+                }
+            }
+        },
+        {
             "name": "linux",
             "hidden": true,
             "generator": "Ninja",
@@ -25,6 +42,20 @@
             }
         },
         {
+            "name": "win-debug",
+            "inherits": [
+                "win",
+                "debug"
+            ]
+        },
+        {
+            "name": "win-release",
+            "inherits": [
+                "win",
+                "release"
+            ]
+        },
+        {
             "name": "linux-debug",
             "inherits": [
                 "linux",
@@ -40,6 +71,16 @@
         }
     ],
     "buildPresets": [
+        {
+            "name": "win-debug",
+            "configurePreset": "win-debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "win-release",
+            "configurePreset": "win-release",
+            "configuration": "Release"
+        },
         {
             "name": "linux-debug",
             "configurePreset": "linux-debug",
