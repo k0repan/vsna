@@ -29,6 +29,12 @@ async fn start_server() {
     axum::serve(listener, app).await.unwrap();
 }
 
+async fn run_as_host() {
+    // start_server().await;
+
+    dir_handler::read_path().await;
+}
+
 
 #[tokio::main]
 async fn main() {
@@ -51,7 +57,7 @@ async fn main() {
 
         match choose {
             0 => break,
-            1 => dir_handler::read_path(),
+            1 => run_as_host().await,
             2 => println!("[!] Function in dev..."),
             _ => println!("[!] Unknown command"),
         }
