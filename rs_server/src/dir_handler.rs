@@ -1,15 +1,52 @@
-use std::io;
-use std::path::Path;
+use std::{
+    io,
+    path::Path,
+    fs
+};
 use walkdir::{
     WalkDir,
     Error
 };
 use tokio::task;
+use axum::response::Json;
+
+
+pub async fn list_files() -> Json<Vec<String>> {
+    let mut files: Vec<String> = Vec::new();
+    
+    match fs::read_dir(".") {
+        Ok(entries) => {
+            for entry in entries.filter_map(Result::ok) {
+                if let Ok(name) = entry.file_name().into_string() {
+                    files.push(name);
+                }
+            }
+        }
+        Err(_) => eprintln!("[!] Error reading paths"),
+    }
+    
+    Json(files)
+}
+
+pub async fn read_path() {
+    println!("[\\] Current path:");
+    
+    match fs::read_dir(".") {
+        Ok(entries) => {
+            for entry in entries.filter_map(Result::ok) {
+                if let Ok(name) = entry.file_name().into_string() {
+                    println!("\t-{}", name);
+                }
+            }
+        }
+        Err(e) => eprintln!("[!] {e}"),
+    }
+}
 
 // Read the path and files include, instead of ignored
-pub async fn read_path(){
+pub async fn _read_path() {
     println!("[=] Enter the path (input ignored paths/files by !path\\ | !*.fmt | !file)");
-    println!("[=] Example: C:\\Users\\maksi\\AppData\\ !Roaming\\ !Localow\\ !*.log\n");
+    println!("[=] Example: C:\\Users\\maksi\\AppData\\ !Roaming\\ !*.log\n");
 
     let input: String = tokio::task::spawn_blocking(|| {
         let mut input: String = String::new();
@@ -40,17 +77,20 @@ pub async fn read_path(){
             Some(c) => c != '!',
             None => true,
         }) {
-            println!("[!] Error: incorrrect ignored input");
+            println!("[!] Incorrrect ignored input");
             return;
         }
         // For now support only *file*, *.fmt patterns check
         for i in ignored {
             if i.ends_with("\\") {
                 ignored_patterns.push((&i[1..i.len()-1]).to_string());
+
             } else if i.matches("*").count() == 1 || i.matches("*").count() == 0 {
                 ignored_patterns.push((&i[1..]).to_string());
+
             } else if i.contains("*.") && i.matches("*").count() == 2{
                 ignored_patterns.push((&i[2..i.len()-1]).to_string());
+
             } else {
                 println!("[!] Unknown error");
                 return;
@@ -60,27 +100,27 @@ pub async fn read_path(){
         
     let path_obj: &Path = Path::new(&path);
     if !path_obj.exists() {
-        println!("[!] Error: Path '{}' does not exist", path);
+        println!("[!] Path '{}' does not exist", path);
         return;
     }
 
     if !path_obj.is_dir() {
-        println!("[!] Error: '{}' is not a directory", path);
+        println!("[!] '{}' is not a directory", path);
         return;
     }
 
-    let _ = get_dirs_in_path(path, ignored_patterns).await;
+    get_dirs_in_path(path, ignored_patterns).await.unwrap();
 }
 
 // Print all dirs and files
 async fn get_dirs_in_path(path: String, ignored_patterns: Vec<String>) -> Result<(), Error> {    
-    let entries_result = task::spawn_blocking(move || {
+    let entries_result: Result<Vec<walkdir::DirEntry>, Error> = task::spawn_blocking(move || {
         WalkDir::new(&path)
             .into_iter()
             .collect::<Result<Vec<_>, _>>()
     }).await.unwrap();
 
-    let entries = match entries_result {
+    let entries: Vec<walkdir::DirEntry> = match entries_result {
         Ok(entries) => entries,
         Err(e) => {
             eprintln!("[!] Error walking directory: {}", e);
@@ -89,14 +129,14 @@ async fn get_dirs_in_path(path: String, ignored_patterns: Vec<String>) -> Result
     };
 
     for entry in entries {
-        let temp = entry.path().to_string_lossy().to_string();
+        let temp: String = entry.path().to_string_lossy().to_string();
 
         if ignored_patterns.iter().any(|pattern| temp.contains(pattern)) {
             continue;
         }
 
-        let depth = entry.depth();
-        let indent = "  ".repeat(depth);
+        let depth: usize = entry.depth();
+        let indent: String = "  ".repeat(depth);
         
         if entry.file_type().is_dir() {
             println!("{}📁 {}\\", indent, entry.file_name().to_string_lossy());

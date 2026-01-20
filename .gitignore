@@ -1,2 +1,6 @@
 **/target/
 **/Cargo.lock
+.vs
+.vscode
+build/
+**/.env

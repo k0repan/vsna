@@ -1,65 +1,39 @@
 use std::io;
 
-use axum::{
-    routing::get,
-    Router,
-};
-
 mod dir_handler;
+mod config;
+mod host;
+mod client;
 
-const ADDR: &str = "0.0.0.0";
-const PORT: &str = "3000";
+/*
+Output signs:
+\ - dir | path,
+= - info,
++ - write,
+! - err,
+1..9 - choice
+*/
 
-
-fn get_full_addr() -> String {
-    format!("{}:{}", ADDR, PORT)
-}
-
-
-fn std_addr() -> &'static str {
-    "Hello, world!"
-}
-
-async fn start_server() {
-    // build our application with a single route
-    let app: Router = Router::new().route("/", get({ std_addr(); }));
-
-    // run our app with hyper, listening globally on port 3000
-    let listener: tokio::net::TcpListener = tokio::net::TcpListener::bind(get_full_addr()).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
-}
-
-async fn run_as_host() {
-    // start_server().await;
-
-    dir_handler::read_path().await;
-}
-
-
-#[tokio::main]
-async fn main() {
+async fn run_cli() {
+    // Main CLI
     loop {
-            println!("
-[0] Exit
-[1] Run as host
-[2] Connect as guest");
-
-        let mut choose: String = String::new();
-
-        io::stdin()
-            .read_line(&mut choose)
-            .expect("[!] Failed to read line");
-
-        let choose: u8 = choose
-                            .trim()
-                            .parse()
-                            .expect("[!] Please type a number!");
-
-        match choose {
-            0 => break,
-            1 => run_as_host().await,
-            2 => println!("[!] Function in dev..."),
+        println!("[0] Exit");
+        println!("[1] Run as host");
+        println!("[2] Connect as client");
+        
+        let mut choice: String = String::new();
+        io::stdin().read_line(&mut choice).expect("[!] Cannot read choice");
+        
+        match choice.trim() {
+            "0" => break,
+            "1" => host::run_as_host().await.expect(""),
+            "2" => client::connect_as_guest().await,
             _ => println!("[!] Unknown command"),
         }
     }
+}
+
+#[tokio::main]
+async fn main() {
+    run_cli().await;
 }
