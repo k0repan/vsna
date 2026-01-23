@@ -1,50 +1,25 @@
 use std::{
     io,
     path::Path,
-    fs
 };
 use walkdir::{
     WalkDir,
     Error
 };
 use tokio::task;
-use axum::response::Json;
 
+use crate::config;
 
-pub async fn list_files() -> Json<Vec<String>> {
-    let mut files: Vec<String> = Vec::new();
-    
-    match fs::read_dir(".") {
-        Ok(entries) => {
-            for entry in entries.filter_map(Result::ok) {
-                if let Ok(name) = entry.file_name().into_string() {
-                    files.push(name);
-                }
-            }
-        }
-        Err(_) => eprintln!("[!] Error reading paths"),
-    }
-    
-    Json(files)
+pub async fn read_path_as_host() -> String {
+    get_dirs_in_path(config::CONFIG.usr_path.clone(), Vec::new()).await.expect("[!] 404 Not found")
 }
 
-pub async fn read_path() {
-    println!("[\\] Current path:");
-    
-    match fs::read_dir(".") {
-        Ok(entries) => {
-            for entry in entries.filter_map(Result::ok) {
-                if let Ok(name) = entry.file_name().into_string() {
-                    println!("\t-{}", name);
-                }
-            }
-        }
-        Err(e) => eprintln!("[!] {e}"),
-    }
+pub async fn read_path_as_client() {
+    println!("{}", _read_path().await);
 }
 
 // Read the path and files include, instead of ignored
-pub async fn _read_path() {
+async fn _read_path() -> String {
     println!("[=] Enter the path (input ignored paths/files by !path\\ | !*.fmt | !file)");
     println!("[=] Example: C:\\Users\\maksi\\AppData\\ !Roaming\\ !*.log\n");
 
@@ -77,8 +52,7 @@ pub async fn _read_path() {
             Some(c) => c != '!',
             None => true,
         }) {
-            println!("[!] Incorrrect ignored input");
-            return;
+            return "[!] Incorrrect ignored input".to_string();
         }
         // For now support only *file*, *.fmt patterns check
         for i in ignored {
@@ -92,30 +66,27 @@ pub async fn _read_path() {
                 ignored_patterns.push((&i[2..i.len()-1]).to_string());
 
             } else {
-                println!("[!] Unknown error");
-                return;
+                return "[!] Unknown error".to_string();
             }
         }
     }
         
     let path_obj: &Path = Path::new(&path);
     if !path_obj.exists() {
-        println!("[!] Path '{}' does not exist", path);
-        return;
+        return format!("[!] Path '{}' does not exist", path);
     }
 
     if !path_obj.is_dir() {
-        println!("[!] '{}' is not a directory", path);
-        return;
+        return format!("[!] '{}' is not a directory", path);
     }
 
-    get_dirs_in_path(path, ignored_patterns).await.unwrap();
+    get_dirs_in_path(path, ignored_patterns).await.unwrap()
 }
 
 // Print all dirs and files
-async fn get_dirs_in_path(path: String, ignored_patterns: Vec<String>) -> Result<(), Error> {    
+async fn get_dirs_in_path(path: String, ignored_patterns: Vec<String>) -> Result<String, Error> {    
     let entries_result: Result<Vec<walkdir::DirEntry>, Error> = task::spawn_blocking(move || {
-        WalkDir::new(&path)
+        WalkDir::new(path)
             .into_iter()
             .collect::<Result<Vec<_>, _>>()
     }).await.unwrap();
@@ -128,22 +99,26 @@ async fn get_dirs_in_path(path: String, ignored_patterns: Vec<String>) -> Result
         }
     };
 
+    let mut result: String = String::new();
+
     for entry in entries {
         let temp: String = entry.path().to_string_lossy().to_string();
 
-        if ignored_patterns.iter().any(|pattern| temp.contains(pattern)) {
-            continue;
+        if ignored_patterns.len() > 0 {
+            if ignored_patterns.iter().any(|pattern| temp.contains(pattern)) {
+                continue;
+            }
         }
 
         let depth: usize = entry.depth();
         let indent: String = "  ".repeat(depth);
         
         if entry.file_type().is_dir() {
-            println!("{}📁 {}\\", indent, entry.file_name().to_string_lossy());
+            result.push_str(&format!("{}📁 {}\\\n", indent, entry.file_name().to_string_lossy()));
         } else {
-            println!("{}📄 {}", indent, entry.file_name().to_string_lossy());
+            result.push_str(&format!("{}📄 {}\n", indent, entry.file_name().to_string_lossy()));
         }
     }
-    
-    Ok(())
+
+    Ok(result)
 }

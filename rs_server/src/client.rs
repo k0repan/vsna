@@ -1,5 +1,6 @@
 use std::io;
 use crate::host::Message;
+use crate::dir_handler::read_path_as_client;
 
 async fn connect_to_network() -> String {
     // Connected to VPN via name and pwd
@@ -11,9 +12,9 @@ async fn connect_to_network() -> String {
     format!("http://{}:5555", server_ip) // return url
 }
 
-async fn download_file() -> Result<(), String> {
-    // dir_handler::read_path().await?;
-    
+async fn download_file(url: &String) -> Result<(), String> {
+    read_path_as_client().await;
+    // input file names & copy files to client device
     Ok(())
 }
 
@@ -85,7 +86,7 @@ async fn options(url: &String) {
     // Client CLI
     loop {
         println!("[0] Exit");
-        println!("[1] Download file");
+        println!("[1] Download files");
         println!("[2] Send message");
         println!("[3] Get all messages");
         println!("[4] Check connection");
@@ -95,7 +96,7 @@ async fn options(url: &String) {
         
         match choice.trim() {
             "0" => break,
-            "1" => download_file().await.expect("[!] Err with download file"),
+            "1" => download_file(url).await.expect("[!] Err with download files"),
             "2" => _send_message(url).await.expect("[!] Err with sending message"),
             "3" => get_all_messages(url).await,
             "4" => check_connection(url).await,

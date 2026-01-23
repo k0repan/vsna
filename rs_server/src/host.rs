@@ -8,8 +8,9 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+
 use crate::config;
-use crate::dir_handler::read_path;
+use crate::dir_handler::read_path_as_host;
 
 #[derive(Clone)]
 struct AppState {
@@ -49,7 +50,7 @@ async fn get_messages(State(state): State<AppState>) -> Json<Vec<String>> {
 }
 
 async fn start_server() -> Result<(), io::Error> {
-    let state = AppState {
+    let state: AppState = AppState {
         shared_data: Arc::new(Mutex::new(Vec::new())),
     };
     
@@ -57,6 +58,7 @@ async fn start_server() -> Result<(), io::Error> {
         .route("/", get(hello_world))
         .route("/send", post(send_message))
         .route("/messages", get(get_messages))
+        .route("/files", get(read_path_as_host))
         .with_state(state);
 
     println!("[=] Server is on http://{}", get_addr()); 
@@ -78,7 +80,7 @@ async fn run_vpn() -> Result<(), String> {
 pub async fn run_as_host() -> Result<(), String> {
     start_server().await.expect("[!] Err with starting server");
     run_vpn().await.expect("[!] Err with run VPN");
-    read_path().await;
+    read_path_as_host().await;
     
     Ok(())
 }
