@@ -1,30 +1,33 @@
-use std::env;
+use std::{env, sync::OnceLock};
 use dotenv::dotenv;
-use lazy_static::lazy_static;
 
-lazy_static! {
-    pub static ref CONFIG: Config = {
-        let _ = dotenv();
-        
-        Config {
-            usr_path: env::var("USR_PATH")
-                .unwrap_or_else(|_| "/usr".to_string()),
-            
-            addr: env::var("ADDRESS")
-                .unwrap_or_else(|_| "0.0.0.0".to_string()),
-            
-            port: env::var("PORT")
-                .unwrap_or_else(|_| "5555".to_string()),
-            
-            algo: env::var("ENCRYPTED_ALGORITHM")
-                .unwrap_or_else(|_| "AES-256".to_string())
-        }
-    };
-}
-
+#[derive(Debug, Clone)]
 pub struct Config {
     pub usr_path: String,
     pub addr: String,
     pub port: String,
     pub algo: String,
+}
+
+impl Config {
+    pub fn new() -> Self {
+        dotenv().ok();
+        
+        Config {
+            usr_path: Self::get_env_or_default("USR_PATH", "/usr/path/"),
+            addr: Self::get_env_or_default("ADDRESS", "0.0.0.0"),
+            port: Self::get_env_or_default("PORT", "5555"),
+            algo: Self::get_env_or_default("ENCRYPTED_ALGORITHM", "AES-256"),
+        }
+    }
+    
+    fn get_env_or_default(key: &str, default: &str) -> String {
+        env::var(key).unwrap_or_else(|_| default.to_string())
+    }
+}
+
+static _CONFIG: OnceLock<Config> = OnceLock::new();
+
+pub fn get_config() -> &'static Config {
+    _CONFIG.get_or_init(Config::new)
 }

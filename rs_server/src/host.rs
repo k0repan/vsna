@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use crate::config;
+use crate::config::get_config;
 use crate::dir_handler::read_path_as_host;
 use crate::client::check_connection;
 
@@ -23,8 +23,8 @@ pub struct Message {
     pub from: String,
 }
 
-fn get_addr() -> String {
-    format!("{}:{}", config::CONFIG.addr, config::CONFIG.port)
+pub fn get_addr() -> String {
+    format!("{}:{}", get_config().addr, get_config().port)
 }
 
 async fn hello_world() -> &'static str {
@@ -51,10 +51,7 @@ async fn get_messages(State(state): State<AppState>) -> Json<Vec<String>> {
 
 async fn start_server() -> Result<(), axum::Error> {
     match check_connection(&format!("http://{}", get_addr())).await {
-        Ok(e) => {
-            eprintln!("[!] Server is already running: {:?}", e);
-            return Err(axum::Error::new(""));
-        },
+        Ok(_) => eprintln!("[!] Server is already running"),
         Err(_) => println!("[=] Port is OK"),
     };
 
@@ -78,6 +75,18 @@ async fn start_server() -> Result<(), axum::Error> {
         ).await.unwrap();
     });
     
+    Ok(())
+}
+
+pub async fn stop_server() -> Result<(), axum::Error>{
+    match check_connection(&format!("http://{}", get_addr())).await {
+        Ok(_) => println!("[=] Stopping server..."),
+        Err(_) => eprintln!("[!] Server is not running"),
+    };
+
+    // smth happened...
+    
+
     Ok(())
 }
 

@@ -8,10 +8,10 @@ use walkdir::{
 };
 use tokio::task;
 
-use crate::config;
+use crate::config::get_config;
 
 pub async fn read_path_as_host() -> String {
-    get_dirs_in_path(config::CONFIG.usr_path.clone(), Vec::new()).await.expect("[!] 404 Not found")
+    get_dirs_in_path(get_config().usr_path.clone(), Vec::new()).await.expect("[!] 404 Not found")
 }
 
 pub async fn read_path_as_client() {
@@ -52,7 +52,8 @@ async fn _read_path() -> String {
             Some(c) => c != '!',
             None => true,
         }) {
-            return "[!] Incorrrect ignored input".to_string();
+            println!("[!] Incorrrect ignored input");
+            return "".to_string();
         }
         // For now support only *file*, *.fmt patterns check
         for i in ignored {
@@ -66,18 +67,21 @@ async fn _read_path() -> String {
                 ignored_patterns.push((&i[2..i.len()-1]).to_string());
 
             } else {
-                return "[!] Unknown error".to_string();
+                println!("[!] Unknown error");
+                return "".to_string();
             }
         }
     }
         
     let path_obj: &Path = Path::new(&path);
     if !path_obj.exists() {
-        return format!("[!] Path '{}' does not exist", path);
+        println!("[!] Path {} does not exist", path);
+        return "".to_string();
     }
 
     if !path_obj.is_dir() {
-        return format!("[!] '{}' is not a directory", path);
+        println!("[!] {} is not a directory", path);
+        return "".to_string();
     }
 
     get_dirs_in_path(path, ignored_patterns).await.unwrap()

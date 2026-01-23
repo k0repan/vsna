@@ -17,9 +17,12 @@ Output signs:
 async fn run_cli() {
     // Main CLI
     loop {
+        //println!("[~] ENV: {:?}", config::get_config());
+        println!("");
         println!("[0] Exit");
         println!("[1] Run as host");
         println!("[2] Connect as client");
+        println!("[3] Stop server");
         
         let mut choice: String = String::new();
         io::stdin()
@@ -30,6 +33,7 @@ async fn run_cli() {
             "0" => break,
             "1" => host::run_as_host().await.expect(""),
             "2" => client::connect_as_guest().await,
+            "3" => host::stop_server().await.expect(""),
             _ => println!("[!] Unknown command"),
         }
     }

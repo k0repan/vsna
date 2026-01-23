@@ -1,9 +1,12 @@
 use std::{fs, io};
 use axum::Error;
 
-use crate::host::Message;
+use crate::host::{
+    Message,
+    get_addr,
+};
 use crate::dir_handler::read_path_as_client;
-use crate::config::CONFIG;
+use crate::config::get_config;
 
 async fn connect_to_network() -> String {
     // Connecting to VPN via name and pwd
@@ -11,8 +14,26 @@ async fn connect_to_network() -> String {
     let mut server_ip: String = String::new();
     io::stdin().read_line(&mut server_ip).expect("[!] Cannot read IP");
     let server_ip: &str = server_ip.trim();
+
+    if server_ip.len() == 0 {
+        return format!("http://{}", get_addr());
+    }
     
-    format!("http://{}:5555", server_ip) // return url
+    format!("http://{}:{}", server_ip, get_config().port) // return url
+}
+
+async fn show_files(url: &String) {
+    match reqwest::get(&format!("{}/files", url)).await {
+        Ok(response) => {
+            if response.status().is_success() {
+                let files: String = response.text().await.expect("");
+                println!("\n[=] All files:\n{}", files);
+            } else {
+                println!("[!] {}", response.status());
+            }
+        }
+        Err(e) => println!("[!] {e}"),
+    }
 }
 
 async fn download_file(url: &String) -> Result<(), String> {
@@ -22,7 +43,7 @@ async fn download_file(url: &String) -> Result<(), String> {
 }
 
 async fn read_file() {
-    println!("[=] You are in directory {}", &CONFIG.usr_path);
+    println!("[=] You are in directory {}", &get_config().usr_path[2..]);
     println!("[>] Input file name: ");
     let mut input_file: String = String::new();
     io::stdin()
@@ -31,12 +52,19 @@ async fn read_file() {
 
     let input_file: &str = input_file.trim();
 
-    let mut filename: String = (&CONFIG.usr_path).to_string();
+    let mut filename: String = (&get_config().usr_path).to_string();
     filename.push_str(&input_file);
+
+    let filesize: u64 = fs::metadata(&filename).unwrap().len();
+
+    if filesize > 1024 {
+        println!("[!] Filesize is too big: {}", filesize);
+        return;
+    }
 
     match fs::read_to_string(&filename) {
         Ok(content) => {
-            println!("{}:\n{}", filename, content);
+            println!("{} {}B:\n{}", filename, filesize, content);
         }
         Err(e) => {
             eprintln!("[!] Cannot read '{}': {}", filename, e);
@@ -120,12 +148,14 @@ async fn get_all_messages(url: &String) {
 async fn options(url: &String) {
     // Client CLI
     loop {
+        println!("");
         println!("[0] Exit");
-        println!("[1] Download files");
-        println!("[2] Read file");
-        println!("[3] Send message");
-        println!("[4] Get all messages");
-        println!("[5] Check connection");
+        println!("[1] Show files");
+        println!("[2] Download files");
+        println!("[3] Read file");
+        println!("[4] Send message");
+        println!("[5] Get all messages");
+        println!("[6] Check connection");
         
         let mut choice: String = String::new();
         io::stdin()
@@ -134,11 +164,12 @@ async fn options(url: &String) {
         
         match choice.trim() {
             "0" => break,
-            "1" => download_file(url).await.expect("[!] Err with download files"),
-            "2" => read_file().await,
-            "3" => _send_message(url).await.expect("[!] Err with sending message"),
-            "4" => get_all_messages(url).await,
-            "5" => check_connection(url).await.unwrap(),
+            "1" => show_files(url).await,
+            "2" => download_file(url).await.expect("[!] Err with download files"),
+            "3" => read_file().await,
+            "4" => _send_message(url).await.expect("[!] Err with sending message"),
+            "5" => get_all_messages(url).await,
+            "6" => check_connection(url).await.unwrap(),
             _ => println!("[!] Unknown command"),
         }
     }
@@ -146,5 +177,9 @@ async fn options(url: &String) {
 
 pub async fn connect_as_guest() {
     let base_url: String = connect_to_network().await;
+    match check_connection(&base_url).await {
+        Ok(_) => println!(),
+        Err(e) => eprintln!("[!] {}", e),
+    };
     options(&base_url).await;
 }
