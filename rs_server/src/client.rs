@@ -1,9 +1,12 @@
-use std::io;
+use std::{fs, io};
+use axum::Error;
+
 use crate::host::Message;
 use crate::dir_handler::read_path_as_client;
+use crate::config::CONFIG;
 
 async fn connect_to_network() -> String {
-    // Connected to VPN via name and pwd
+    // Connecting to VPN via name and pwd
     println!("[>] Input IP of the server (localhost, 192.0.12.3): ");
     let mut server_ip: String = String::new();
     io::stdin().read_line(&mut server_ip).expect("[!] Cannot read IP");
@@ -18,14 +21,41 @@ async fn download_file(url: &String) -> Result<(), String> {
     Ok(())
 }
 
+async fn read_file() {
+    println!("[=] You are in directory {}", &CONFIG.usr_path);
+    println!("[>] Input file name: ");
+    let mut input_file: String = String::new();
+    io::stdin()
+        .read_line(&mut input_file)
+        .expect("[!] Cannot read filename");
+
+    let input_file: &str = input_file.trim();
+
+    let mut filename: String = (&CONFIG.usr_path).to_string();
+    filename.push_str(&input_file);
+
+    match fs::read_to_string(&filename) {
+        Ok(content) => {
+            println!("{}:\n{}", filename, content);
+        }
+        Err(e) => {
+            eprintln!("[!] Cannot read '{}': {}", filename, e);
+        }
+    }
+}
+
 async fn _send_message(url: &String) -> Result<(), String> {
     println!("[>] Input name: ");
     let mut from: String = String::new();
-    io::stdin().read_line(&mut from).expect("[!] Cannot read name");
+    io::stdin()
+        .read_line(&mut from)
+        .expect("[!] Cannot read name");
     
     println!("[>] Input message: ");
     let mut text: String = String::new();
-    io::stdin().read_line(&mut text).expect("[!] Cannot read message");
+    io::stdin()
+        .read_line(&mut text)
+        .expect("[!] Cannot read message");
     
     let message: Message = Message {
         text: text.trim().to_string(),
@@ -51,17 +81,22 @@ async fn _send_message(url: &String) -> Result<(), String> {
     Ok(())
 }
 
-async fn check_connection(url: &String) {
-    match reqwest::get(&*url).await {
+pub async fn check_connection(url: &String) -> Result<(), Error> {
+    match reqwest::get(url).await {
         Ok(response) => {
             if response.status().is_success() {
-                let text: String = response.text().await.unwrap_or_default();
+                let text: String = response.text().await.unwrap();
                 println!("[=] Connnect successful! Response: {}", text);
+                Ok(())
             } else {
                 println!("[!] {}", response.status());
+                return Err(axum::Error::new(""));
             }
         }
-        Err(e) => println!("[!] {e}"),
+        Err(e) => {
+            println!("[!] {e}");
+            return Err(axum::Error::new(""));
+        },
     }
 }
 
@@ -87,19 +122,23 @@ async fn options(url: &String) {
     loop {
         println!("[0] Exit");
         println!("[1] Download files");
-        println!("[2] Send message");
-        println!("[3] Get all messages");
-        println!("[4] Check connection");
+        println!("[2] Read file");
+        println!("[3] Send message");
+        println!("[4] Get all messages");
+        println!("[5] Check connection");
         
         let mut choice: String = String::new();
-        io::stdin().read_line(&mut choice).expect("[!] Cannot read choice");
+        io::stdin()
+            .read_line(&mut choice)
+            .expect("[!] Cannot read choice");
         
         match choice.trim() {
             "0" => break,
             "1" => download_file(url).await.expect("[!] Err with download files"),
-            "2" => _send_message(url).await.expect("[!] Err with sending message"),
-            "3" => get_all_messages(url).await,
-            "4" => check_connection(url).await,
+            "2" => read_file().await,
+            "3" => _send_message(url).await.expect("[!] Err with sending message"),
+            "4" => get_all_messages(url).await,
+            "5" => check_connection(url).await.unwrap(),
             _ => println!("[!] Unknown command"),
         }
     }

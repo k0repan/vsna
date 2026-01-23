@@ -4,7 +4,7 @@ use std::{
 };
 use walkdir::{
     WalkDir,
-    Error
+    Error,
 };
 use tokio::task;
 

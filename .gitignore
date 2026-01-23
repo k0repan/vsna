@@ -1,7 +1,8 @@
 **/target/
 **/Cargo.lock
+**/.env
 .vs
 .vscode
-build/
-**/.env
-usr/
+.idea
+build
+usr

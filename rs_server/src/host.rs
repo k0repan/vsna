@@ -1,4 +1,3 @@
-use std::io;
 use axum::{
     routing::{get, post},
     Router,
@@ -11,6 +10,7 @@ use tokio::sync::Mutex;
 
 use crate::config;
 use crate::dir_handler::read_path_as_host;
+use crate::client::check_connection;
 
 #[derive(Clone)]
 struct AppState {
@@ -49,7 +49,15 @@ async fn get_messages(State(state): State<AppState>) -> Json<Vec<String>> {
     Json(data.clone())
 }
 
-async fn start_server() -> Result<(), io::Error> {
+async fn start_server() -> Result<(), axum::Error> {
+    match check_connection(&format!("http://{}", get_addr())).await {
+        Ok(e) => {
+            eprintln!("[!] Server is already running: {:?}", e);
+            return Err(axum::Error::new(""));
+        },
+        Err(_) => println!("[=] Port is OK"),
+    };
+
     let state: AppState = AppState {
         shared_data: Arc::new(Mutex::new(Vec::new())),
     };
@@ -63,10 +71,12 @@ async fn start_server() -> Result<(), io::Error> {
 
     println!("[=] Server is on http://{}", get_addr()); 
     
-    axum::serve(
-        tokio::net::TcpListener::bind(get_addr()).await?,
+    let _ = tokio::spawn(async move {        
+        axum::serve(
+            tokio::net::TcpListener::bind(get_addr()).await.unwrap(),
         app
-    ).await?;
+        ).await.unwrap();
+    });
     
     Ok(())
 }

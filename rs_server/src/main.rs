@@ -22,7 +22,9 @@ async fn run_cli() {
         println!("[2] Connect as client");
         
         let mut choice: String = String::new();
-        io::stdin().read_line(&mut choice).expect("[!] Cannot read choice");
+        io::stdin()
+            .read_line(&mut choice)
+            .expect("[!] Cannot read choice");
         
         match choice.trim() {
             "0" => break,
