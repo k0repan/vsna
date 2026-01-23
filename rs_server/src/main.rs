@@ -6,11 +6,13 @@ mod host;
 mod client;
 
 /*
-Output signs:
+Output signs []:
 \ - dir | path,
 = - info,
 + - write,
+> - input,
 ! - err,
+~ - dbg,
 1..9 - choice
 */
 

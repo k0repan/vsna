@@ -1,8 +1,15 @@
 use axum::{
-    Error, Router, extract::State, response::Json, routing::{get, post}
+    Error,
+    Router,
+    extract::State,
+    response::Json,
+    routing::{get, post},
 };
-use serde::{Deserialize, Serialize};
-use std::{sync::Arc};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use std::{fs, io, sync::Arc};
 use tokio::{
     signal,
     sync::Mutex,
@@ -17,7 +24,7 @@ struct AppState {
     shared_data: Arc<Mutex<Vec<String>>>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Message {
     pub text: String,
     pub from: String,
@@ -73,6 +80,13 @@ async fn shutdown_signal() {
     }
 }
 
+async fn check_env_paths() -> Result<(), io::Error>{
+    fs::create_dir_all(&get_config().usr_path)?;
+    fs::create_dir_all(&get_config().chat_path)?;
+
+    Ok(())
+}
+
 async fn start_server() -> Result<(), axum::Error> {
     let addr: String = get_addr();
 
@@ -83,6 +97,8 @@ async fn start_server() -> Result<(), axum::Error> {
         },
         Err(_) => println!("[=] Port is OK"),
     };
+
+    check_env_paths().await.expect("[!] Env paths not found.");
 
     let state: AppState = AppState {
         shared_data: Arc::new(Mutex::new(Vec::new())),
@@ -115,7 +131,6 @@ pub async fn stop_server() -> Result<(), Error> {
         Ok(_) => {
             println!("[=] Stopping server...");
             println!("[=] Press Ctrl+C to shutdown");
-            signal::ctrl_c().await.expect("[!] Failed Ctrl+C handle");
         },
         Err(_) => {
             eprintln!("[!] Server is not running");

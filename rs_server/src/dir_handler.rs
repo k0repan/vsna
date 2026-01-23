@@ -88,7 +88,7 @@ async fn _read_path() -> String {
 }
 
 // Print all dirs and files
-async fn get_dirs_in_path(path: String, ignored_patterns: Vec<String>) -> Result<String, Error> {    
+pub async fn get_dirs_in_path(path: String, ignored_patterns: Vec<String>) -> Result<String, Error> {    
     let entries_result: Result<Vec<walkdir::DirEntry>, Error> = task::spawn_blocking(move || {
         WalkDir::new(path)
             .into_iter()
