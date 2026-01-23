@@ -1,12 +1,12 @@
 use axum::{
-    routing::{get, post},
-    Router,
-    extract::State,
-    response::Json,
+    Error, Router, extract::State, response::Json, routing::{get, post}
 };
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use std::{sync::Arc};
+use tokio::{
+    signal,
+    sync::Mutex,
+};
 
 use crate::config::get_config;
 use crate::dir_handler::read_path_as_host;
@@ -49,9 +49,38 @@ async fn get_messages(State(state): State<AppState>) -> Json<Vec<String>> {
     Json(data.clone())
 }
 
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("[!] Failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("[!] Failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+}
+
 async fn start_server() -> Result<(), axum::Error> {
-    match check_connection(&format!("http://{}", get_addr())).await {
-        Ok(_) => eprintln!("[!] Server is already running"),
+    let addr: String = get_addr();
+
+    match check_connection(&format!("http://{}", addr)).await {
+        Ok(_) => {
+            eprintln!("[!] Server is already running");
+            return Ok(());
+        },
         Err(_) => println!("[=] Port is OK"),
     };
 
@@ -66,26 +95,32 @@ async fn start_server() -> Result<(), axum::Error> {
         .route("/files", get(read_path_as_host))
         .with_state(state);
 
-    println!("[=] Server is on http://{}", get_addr()); 
+    println!("[=] Server is on http://{}", addr); 
     
     let _ = tokio::spawn(async move {        
         axum::serve(
-            tokio::net::TcpListener::bind(get_addr()).await.unwrap(),
+            tokio::net::TcpListener::bind(addr).await.unwrap(),
         app
-        ).await.unwrap();
+        ).with_graceful_shutdown(async {
+            shutdown_signal().await;
+            println!("[=] Server is shutdowned successfully.");
+        }).await.unwrap();
     });
     
     Ok(())
 }
 
-pub async fn stop_server() -> Result<(), axum::Error>{
+pub async fn stop_server() -> Result<(), Error> {
     match check_connection(&format!("http://{}", get_addr())).await {
-        Ok(_) => println!("[=] Stopping server..."),
-        Err(_) => eprintln!("[!] Server is not running"),
+        Ok(_) => {
+            println!("[=] Stopping server...");
+            println!("[=] Press Ctrl+C to shutdown");
+            signal::ctrl_c().await.expect("[!] Failed Ctrl+C handle");
+        },
+        Err(_) => {
+            eprintln!("[!] Server is not running");
+        },
     };
-
-    // smth happened...
-    
 
     Ok(())
 }

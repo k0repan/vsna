@@ -39,7 +39,7 @@ async fn _read_path() -> String {
         Vec::new()
     };
 
-    let mut path: String = String::from(path.trim());
+    let mut path: String = format!("{}{}", get_config().usr_path, path.trim());
     if !path.ends_with("\\") {
         path.push_str("\\");
     }

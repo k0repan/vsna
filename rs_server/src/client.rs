@@ -179,7 +179,9 @@ pub async fn connect_as_guest() {
     let base_url: String = connect_to_network().await;
     match check_connection(&base_url).await {
         Ok(_) => println!(),
-        Err(e) => eprintln!("[!] {}", e),
+        Err(_) => {
+            return;
+        },
     };
     options(&base_url).await;
 }
