@@ -2,3 +2,6 @@ rs_server/target/
 build/
 **/.env
 **/Cargo.lock
+.vs
+.vscode
+user

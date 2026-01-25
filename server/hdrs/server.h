@@ -8,6 +8,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
+// THIS FILE WILL BE REWRITTEN IN THE FUTURE!!
 
 namespace beast = boost::beast;
 namespace http = beast::http;

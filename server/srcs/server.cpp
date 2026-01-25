@@ -1,6 +1,7 @@
 #include "server.h"
 #include <iostream>
 
+// THIS FILE WILL BE REWRITTEN IN THE FUTURE!!
 
 server::server(fs::path& root_path, std::uint16_t port) : _root_path(root_path), _port(port) {}
 
@@ -35,6 +36,7 @@ void server::handle_request(
     http::response<http::string_body>& res, 
     asio::ip::tcp::socket& socket
 ){
+    _root_path = root_path;
     std::string target = std::string(req.target());
     
     if (target.empty() || target == "/") {
@@ -46,6 +48,10 @@ void server::handle_request(
 
     target.erase(0, 1);
     fs::path file_path = root_path / target;
+
+    std::cout << "filepath: " << file_path << std::endl;
+    std::cout << "root: " << root_path << std::endl;
+    std::cout << "target: " << target << "\n\n";
 
     if (fs::is_directory(file_path)) {
         res.result(http::status::ok);

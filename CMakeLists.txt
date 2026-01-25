@@ -9,9 +9,12 @@ option(BOOST_USE_FETCHCONTENT
 set(BOOST_FOUND FALSE)
 
 project("VSNA" VERSION 1.0.0 LANGUAGES CXX)
-file(GLOB_RECURSE SOURCES "srcs/*.cpp")
-file(GLOB_RECURSE HEADERS "hdrs/*.h")
-add_executable(server ${SOURCES} ${HEADERS})
+
+file(GLOB_RECURSE SRV_SRCS "server/srcs/*.cpp")
+file(GLOB_RECURSE SRV_HDRS "server/hdrs/*.h")
+
+add_executable(server ${SRV_SRCS} ${SRV_HDRS})
+add_executable(client client/client.cpp)
 
 
 if(NOT BOOST_USE_FETCHCONTENT)
@@ -47,7 +50,7 @@ if(NOT BOOST_FOUND OR BOOST_USE_FETCHCONTENT)
 endif()
 
 
-target_include_directories(server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/hdrs)
+target_include_directories(server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/server/hdrs)
 target_include_directories(server PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(server PRIVATE
     Boost::filesystem
