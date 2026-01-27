@@ -5,10 +5,7 @@ use axum::{
     response::Json,
     routing::{get, post},
 };
-use serde::{
-    Deserialize,
-    Serialize,
-};
+
 use std::{fs, io, sync::Arc};
 use tokio::{
     signal,
@@ -18,17 +15,10 @@ use tokio::{
 use crate::config::get_config;
 use crate::dir_handler::read_path_as_host;
 use crate::client::check_connection;
-
-#[derive(Clone)]
-struct AppState {
-    shared_data: Arc<Mutex<Vec<String>>>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Message {
-    pub text: String,
-    pub from: String,
-}
+use crate::structs::{
+    AppState,
+    Message,
+};
 
 pub fn get_addr() -> String {
     format!("{}:{}", get_config().addr, get_config().port)
@@ -119,7 +109,7 @@ async fn start_server() -> Result<(), axum::Error> {
         app
         ).with_graceful_shutdown(async {
             shutdown_signal().await;
-            println!("[=] Server is shutdowned successfully.");
+            println!("[=] Server is shut down successfully.");
         }).await.unwrap();
     });
     
@@ -140,7 +130,16 @@ pub async fn stop_server() -> Result<(), Error> {
     Ok(())
 }
 
+pub async fn create_network(name: &str, password: &str) -> Result<(), Error> {
+    // ...
+
+    Ok(())
+}
+
 async fn run_vpn() -> Result<(), String> {
+    println!("[=] Starting VPN host...");
+
+    let network = create_network("name", "12345").await.expect("[!] ");
     // Smth happened which can run VPN with Host and Client
     
     Ok(())
@@ -149,7 +148,7 @@ async fn run_vpn() -> Result<(), String> {
 pub async fn run_as_host() -> Result<(), String> {
     start_server().await.expect("[!] Err with starting server");
     run_vpn().await.expect("[!] Err with run VPN");
-    read_path_as_host().await;
+    // read_path_as_host().await;
     
     Ok(())
 }

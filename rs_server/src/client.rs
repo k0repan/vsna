@@ -1,29 +1,50 @@
 use std::{fs, io};
 use axum::{Error};
 use chrono::Utc;
+use tokio::net::TcpStream;
 
-use crate::host::{
-    Message,
-    get_addr,
-};
+use crate::host::get_addr;
+use crate::structs::Message;
 use crate::dir_handler::{
     read_path_as_client,
     get_dirs_in_path,
 };
 use crate::config::get_config;
 
+async fn perform_handshake(addr: String, network_pwd: &str) -> Result<String, String> {
+    let addr: String = format!("http://{}", get_addr());
+
+    //TcpStream::connect(&addr).await.unwrap();
+
+    match check_connection(&addr).await {
+        Ok(_) => {
+            println!("[=] Hadnshake performed");
+            return Ok(addr);
+        },
+        Err(_) => {
+            println!("[!] Err with handshake");
+            return Err(addr);
+        },
+    };
+}
+
 async fn connect_to_network() -> String {
     // Connecting to VPN via name and pwd
-    println!("[>] Input IP of the server (Enter for localhost): ");
-    let mut server_ip: String = String::new();
-    io::stdin().read_line(&mut server_ip).expect("[!] Cannot read IP");
-    let server_ip: &str = server_ip.trim();
+    println!("[>] Input network name: ");
+    let mut network_name: String = String::new();
+    io::stdin()
+    .read_line(&mut network_name)
+    .expect("[!] Cannot read network name");
+    let network_name: &str = network_name.trim();
 
-    if server_ip.len() == 0 {
-        return format!("http://{}", get_addr());
-    }
-    
-    format!("http://{}:{}", server_ip, get_config().port) // return url
+    println!("[>] Input network password: ");
+    let mut network_pwd: String = String::new();
+    io::stdin()
+    .read_line(&mut network_pwd)
+    .expect("[!] Cannot read network password");
+    let network_pwd: &str = network_pwd.trim();
+
+    perform_handshake(network_name.to_string(), network_pwd).await.unwrap()
 }
 
 async fn show_files(url: &String) {
@@ -213,7 +234,6 @@ async fn save_chat_history(url: &String) {
         Ok(response) => {
             if response.status().is_success() {
                 messages = response.json().await.expect("");
-                println!("{messages:?}");
             } else {
                 println!("[!] {}", response.status());
             }
@@ -225,14 +245,15 @@ async fn save_chat_history(url: &String) {
     .format("%Y%m%d_%H%M%S")
     .to_string();
 
-    let dot: usize = match timenow.find(".") {
-        Some(pos) => pos,
-        None => timenow.len()
+    let dot: usize = if let Some(pos) = timenow.find(".") { // fuck me man
+        pos
+    } else {
+        timenow.len()
     };
+
     timenow = timenow[..dot].to_string();
 
     let mut filename: String = format!("{}chat_{}.txt", get_config().chat_path, timenow);
-    println!("{}", &filename);
 
     let content: String = messages.join("\n");
 

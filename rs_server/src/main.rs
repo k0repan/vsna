@@ -4,6 +4,7 @@ mod dir_handler;
 mod config;
 mod host;
 mod client;
+mod structs;
 
 /*
 Output signs []:
