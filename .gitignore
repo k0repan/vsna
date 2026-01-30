@@ -1,0 +1,6 @@
+**/targetv
+**/Cargo.lock
+.env
+.vs
+.vscode
+
