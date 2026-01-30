@@ -1,6 +1,7 @@
 .vs
 .vscode
 .env
+.idea
 Cargo.lock
 target
 out
