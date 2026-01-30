@@ -7,6 +7,7 @@ use serde::Deserialize;
 pub struct Config {
     pub client_path: String,
     pub addr: String,
+    pub port: String,
     pub auto_sync: u16,
 }
 
@@ -16,5 +17,9 @@ impl Config {
         .expect("[!] Can't read json");
 
         serde_json::from_str(&res).unwrap()
+    }
+
+    pub fn get_addr(&self) -> String {
+        format!("{}:{}", self.addr, self.port)
     }
 }

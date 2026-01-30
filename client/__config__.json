@@ -1,5 +1,6 @@
 {
     "client_path": "D:/dir/",
     "addr": "192.0.0.1",
+    "port": "5555",
     "auto_sync": 0
 }
