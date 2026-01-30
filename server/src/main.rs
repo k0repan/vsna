@@ -1,3 +1,6 @@
+mod config;
+
 fn main() {
-    println!("DO U HAVE BOGOS BINTED?!");
+    let config: config::Config = config::Config::new();
+    println!("{config:?}");
 }
