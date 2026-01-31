@@ -5,6 +5,8 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    pub address: String,
+    pub port: u16,
     pub server_path: String,
     pub max_size: u16,
     pub max_clients: u16,
