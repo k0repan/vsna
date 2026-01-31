@@ -1,6 +1,6 @@
 {
-    "client_path": "D:/dir/",
-    "addr": "192.0.0.1",
-    "port": "5555",
+    "client_path": "/home/k0repan/Projects/VSNA/client",
+    "addr": "127.0.0.1",
+    "port": "8000",
     "auto_sync": "true"
 }
