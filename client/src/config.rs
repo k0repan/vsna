@@ -1,19 +1,25 @@
-use std::fs;
+use std::{fs, str::FromStr};
 use serde_json;
-use serde::Deserialize;
-
+use serde::{de, Deserialize};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     pub client_path: String,
     pub addr: String,
     pub port: String,
-    pub auto_sync: u16,
+    #[serde(deserialize_with = "boolean")]
+    pub auto_sync: bool,
+}
+
+fn boolean<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where D: de::Deserializer<'de> {
+    let s: String = String::deserialize(deserializer)?;
+    bool::from_str(&s).map_err(de::Error::custom)
 }
 
 impl Config {
     pub fn new() -> Self {
-        let res = fs::read_to_string("__config__.json")
+        let res: String = fs::read_to_string("__config__.json")
         .expect("[!] Can't read json");
 
         serde_json::from_str(&res).unwrap()
