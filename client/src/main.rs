@@ -4,7 +4,7 @@ mod config;
 mod utils;
 
 use crate::config::Config;
-use crate::utils::client_cli::client_connect;
+use crate::utils::client_connect::client_connect;
 
 async fn main_cli(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     loop {
@@ -32,6 +32,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config: Config = Config::new();
     println!("{config:?}");
 
-    main_cli(&config).await;
+    main_cli(&config).await?;
     Ok(())
 }
