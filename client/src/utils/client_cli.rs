@@ -1,21 +1,24 @@
 use std::io;
 use crate::{
     config::Config,
-    utils::file_handler,
-    utils::client_connect::check_connection,
+    utils::{
+        file_handler,
+        client_connect::check_connection,
+        client_connect::WebSocketClient,
+    },
 };
 
-pub async fn client_cli(config: &Config) {
-    let url: String = config.get_addr();
 
+pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
     loop {
         println!("");
         println!("[0] Exit");
         println!("[1] Show path");
         println!("[2] Download files");
-        println!("[3] Check connection");
+        println!("[3] Send files");
+        println!("[4] Check connection");
 
-        if !check_connection(&url).await {
+        if !check_connection(&ws_stream).await {
             break;
         }
 
@@ -28,44 +31,95 @@ pub async fn client_cli(config: &Config) {
         
         match choice {
             "0" => break,
-            "1" => show_path(&url).await,
-            "2" => download_files(&url, &config.client_path).await,
-            "3" => {
-                if check_connection(&url).await {
+            "1" => show_path_client(&ws_stream).await,
+            "2" => download_files_client(&config.client_path, &ws_stream).await,
+            "3" => send_files_client(&ws_stream).await,
+            "4" => {
+                if check_connection(&ws_stream).await {
                     println!("[=] Connection is successfull");
                 } else {
                     println!("[!] Err with connection");
                 }
             },
-            _ => println!("[!] Unknown command")
+            _ => println!("[!] Unknown command"),
         }
     }
 }
 
 
-async fn show_path(url: &String) {
-    if !check_connection(&url).await {
+async fn show_path_client(ws_stream: &WebSocketClient) {
+    if !check_connection(&ws_stream).await {
         return;
     }
 
-    // TODO: пока такой костыль, потом исправить по-другому надо
-    match reqwest::get(&format!("{}/files", url)).await {
-        Ok(response) => {
-            let files: String = response.text().await.unwrap();
-            println!("\n[=] All files:\n{}", files);
-        }
-        Err(e) => println!("[!] {e}"),
+    let mut request_path: String = String::new();
+    io::stdin()
+        .read_line(&mut request_path)
+        .expect("[!] Err with readline");
+
+    let request_path: &str = request_path.trim();
+
+    if let Err(e) = ws_stream.send_text(format!("GET_PATHS {}", request_path)).await {
+        println!("[!] Failed to send: {}", e);
+        return;
     }
+    
+    // Response
+    //match read.next().await {
+    //    Some(Ok(Message::Text(text))) => println!("\n[=] Files:\n{}", text),
+    //    Some(Err(e)) => println!("[!] Error: {}", e),
+    //    _ => println!("[!] No response"),
+    //}
 }
 
-async fn download_files(url: &String, client_path: &String) {
-    if !check_connection(&url).await {
+async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient) {
+    if !check_connection(&ws_stream).await || file_handler::_read_path(&client_path).await == "!" {
         return;
     }
 
-    if file_handler::_read_path(&client_path).await == "!" {
+    let mut request_files: String = String::new();
+    io::stdin()
+        .read_line(&mut request_files)
+        .expect("[!] Err with readline");
+
+    let request_files: &str = request_files.trim();
+
+    if let Err(e) = ws_stream.send_text(format!("DOWNLOAD_FILES {}", request_files)).await {
+        println!("[!] Failed to send: {}", e);
         return;
-    } else {
-        // not err
     }
+    
+    // Response
+    //match read.next().await {
+    //    Some(Ok(Message::Text(text))) => println!("\n[=] Downloaded:\n{}", text),
+    //    Some(Err(e)) => println!("[!] Error: {}", e),
+    //    _ => println!("[!] No response"),
+    //}
+}
+
+async fn send_files_client(ws_stream: &WebSocketClient) {
+    if !check_connection(&ws_stream).await {
+        return;
+    }
+
+    let mut client_files: String = String::new();
+    io::stdin()
+        .read_line(&mut client_files)
+        .expect("[!] Err with readline");
+
+    let client_files: &str = client_files.trim();
+
+    if let Err(e) = ws_stream.send_text(format!("SEND_FILES {}", client_files)).await {
+        println!("[!] Failed to send: {}", e);
+        return;
+    }
+
+    //write sending bytes of files
+    
+    // Response
+    //match read.next().await {
+    //    Some(Ok(Message::Text(text))) => println!("\n[=] Downloaded:\n{}", text),
+    //    Some(Err(e)) => println!("[!] Error: {}", e),
+    //    _ => println!("[!] No response"),
+    //}
 }

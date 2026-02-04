@@ -1,12 +1,13 @@
-use std::io;
-
 mod config;
 mod utils;
 
-use crate::config::Config;
-use crate::utils::client_connect::client_connect;
+use std::io;
+use crate::{
+    config::Config,
+    utils::client_connect::client_connect,
+};
 
-async fn main_cli(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
+async fn main_cli(config: &Config) {
     loop {
         println!("");
         println!("[0] Exit");
@@ -20,18 +21,17 @@ async fn main_cli(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
         let choice: &str = choice.trim();
         
         match choice {
-            "0" => break Ok(()),
-            "1" => client_connect(&config).await?,
+            "0" => break,
+            "1" => client_connect(&config).await,
             _ => println!("[!] Unknown command")
         }
     }
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() {
     let config: Config = Config::new();
     println!("{config:?}");
 
-    main_cli(&config).await?;
-    Ok(())
+    main_cli(&config).await;
 }
