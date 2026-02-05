@@ -1,7 +1,0 @@
-{
-    "address": "127.0.0.1",
-    "port": 8000,
-    "server_path": "/home/k0repan/Projects/VSNA/server",
-    "max_size": 1024,
-    "max_clients": 3
-}
