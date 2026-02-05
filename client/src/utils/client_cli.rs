@@ -2,9 +2,8 @@ use std::io;
 use crate::{
     config::Config,
     utils::{
-        file_handler,
         client_connect::check_connection,
-        client_connect::WebSocketClient,
+        ws::WebSocketClient,
     },
 };
 
@@ -33,7 +32,7 @@ pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
             "0" => break,
             "1" => show_path_client(&ws_stream).await,
             "2" => download_files_client(&config.client_path, &ws_stream).await,
-            "3" => send_files_client(&ws_stream).await,
+            "3" => send_files_client(&config.client_path, &ws_stream).await,
             "4" => {
                 if check_connection(&ws_stream).await {
                     println!("[=] Connection is successfull");
@@ -73,7 +72,7 @@ async fn show_path_client(ws_stream: &WebSocketClient) {
 }
 
 async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient) {
-    if !check_connection(&ws_stream).await || file_handler::_read_path(&client_path).await == "!" {
+    if !check_connection(&ws_stream).await {
         return;
     }
 
@@ -97,7 +96,7 @@ async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient
     //}
 }
 
-async fn send_files_client(ws_stream: &WebSocketClient) {
+async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
     if !check_connection(&ws_stream).await {
         return;
     }

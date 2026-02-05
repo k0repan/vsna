@@ -5,4 +5,4 @@
 Cargo.lock
 target
 out
-/client/__config__.json
+/**/__config__.json
