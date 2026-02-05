@@ -1,0 +1,8 @@
+.env
+.vs
+.vscode
+.idea
+target
+Cargo.lock
+out
+/server/__config__.json
