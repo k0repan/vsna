@@ -3,13 +3,15 @@ use tokio::{net::TcpStream, sync::RwLock};
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 use futures_util::{SinkExt, StreamExt};
 use tracing::{info, error};
+use crate::{config::Config, utils::commands::Command};
 
 pub type Clients = Arc<RwLock<HashMap<SocketAddr, tokio::sync::mpsc::UnboundedSender<Message>>>>;
 
 pub async fn handle_connection(
     stream: TcpStream,
     addr: SocketAddr,
-    clients: Clients
+    clients: Clients,
+    config: Config,
 ) {
     info!("New Websocket connection from {}", addr);
 
@@ -33,9 +35,15 @@ pub async fn handle_connection(
     while let Some(msg) = ws_receiver.next().await {
         match msg {
             Ok(Message::Text(text)) => {
-                info!("Received text from {}: {}", addr, text);
-                broadcast_message(&clients, Message::Text(text), addr).await;
-            }
+                info!("Received text from {}: {}", addr, &text);
+                broadcast_message(&clients, Message::Text(text.clone()), addr).await;
+                if text.len() > 3 && text.trim().to_string().starts_with("cmd;") {
+                    let cmd = Command::new(&text.to_string(), config.clone());
+                    if let Some(response) = cmd.parse_text_to_command().await {
+                        broadcast_message(&clients, response, addr).await;
+                    }
+                }
+            },
             Ok(Message::Binary(bin)) => {
                 info!("Received {} bytes from {}", bin.len(), addr);
                 broadcast_message(&clients, Message::Binary(bin), addr).await;

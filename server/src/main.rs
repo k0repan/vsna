@@ -21,7 +21,7 @@ async fn start_server(config: &Config) {
         .accept()
         .await
     {
-        tokio::spawn(handle_connection(stream, addr, clients.clone()));
+        tokio::spawn(handle_connection(stream, addr, clients.clone(), config.clone()));
     }
 }
 

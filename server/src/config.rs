@@ -3,7 +3,7 @@ use serde_json;
 use serde::Deserialize;
 
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     pub address: String,
     pub port: String,

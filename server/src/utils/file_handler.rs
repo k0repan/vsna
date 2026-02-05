@@ -1,16 +1,15 @@
 use std::path::Path;
-use walkdir::{
-    WalkDir,
-    Error,
+use tokio_tungstenite::tungstenite::Message;
+use tracing::{error, info};
+use walkdir::{WalkDir, Error};
+use tokio::{fs::File, task, io::AsyncReadExt};
+use crate::{
+    config::Config,
+    utils::file_message::UserFileMessage,
 };
-use tokio::task;
-use crate::config::Config;
 
 // Read the path and files include, instead of ignored
 pub async fn _read_path(config: &Config, input: String) -> String {
-    println!("[=] Enter the path (input ignored paths/files by !path\\ | !*.fmt | !file)");
-    println!("[=] Example: C:\\Users\\user\\AppData\\ !Roaming\\ !*.log\n");
-
     let input: Vec<&str> = input.trim().split(" ").collect();
     let path: String = input[0].to_string();
     let ignored: Vec<&str> = if input.len() > 1 {
@@ -29,11 +28,11 @@ pub async fn _read_path(config: &Config, input: String) -> String {
     if ignored.len() > 0 {
         if ignored.iter().all(|&i|
             match i.chars().next() {
-            Some(c) => c != '!',
-            None => true,
-        }) {
-            println!("[!] Incorrrect ignored input");
-            return "".to_string();
+                Some(c) => c != '!',
+                None => true,
+            }) {
+            error!("[!] Incorrrect ignored input");
+            return "!".to_string();
         }
         // For now support only *file*, *.fmt patterns check
         for i in ignored {
@@ -47,20 +46,20 @@ pub async fn _read_path(config: &Config, input: String) -> String {
                 ignored_patterns.push((&i[2..i.len()-1]).to_string());
 
             } else {
-                println!("[!] Unknown error");
-                return "".to_string();
+                error!("[!] Unknown error");
+                return "!".to_string();
             }
         }
     }
         
     let path_obj: &Path = Path::new(&path);
     if !path_obj.exists() {
-        println!("[!] Path {} does not exist", path);
+        error!("[!] Path {} does not exist", path);
         return "!".to_string();
     }
 
     if !path_obj.is_dir() {
-        println!("[!] {} is not a directory", path);
+        error!("[!] {} is not a directory", path);
         return "!".to_string();
     }
 
@@ -89,7 +88,7 @@ pub async fn get_dirs_in_path(path: String, ignored_patterns: Vec<String>) -> Re
         let temp: String = entry.path().to_string_lossy().to_string();
 
         if ignored_patterns.len() > 0 {
-            if ignored_patterns.iter().any(|pattern| temp.contains(pattern)) {
+            if ignored_patterns.iter().any(|pattern: &String| temp.contains(pattern)) {
                 continue;
             }
         }
@@ -105,4 +104,14 @@ pub async fn get_dirs_in_path(path: String, ignored_patterns: Vec<String>) -> Re
     }
 
     Ok(result)
+}
+
+pub async fn send_file_to_client(config: &Config, location: &String) -> Option<Message> {
+    //TODO: Fragmentation, mayb RAR?
+    let file_loc: String = format!("{}{}", &config.server_path, location);
+    info!("Filename requested: {}", file_loc);
+    let mut file_to_send: File = File::open(file_loc).await.unwrap();
+    let mut buffer: Vec<u8> = Vec::new();
+    file_to_send.read_to_end(&mut buffer).await.unwrap();
+    Some(Message::Binary(buffer.into()))
 }

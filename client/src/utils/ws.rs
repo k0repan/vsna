@@ -15,7 +15,7 @@ pub struct WebSocketClient {
 
 impl WebSocketClient {
     /// New WebSock with ws_stream
-    pub fn new(ws_stream: WebSocketStream<MaybeTlsStream<tokio::net::TcpStream>>, url: &String) -> Self {
+    pub fn new(ws_stream: WebSocketStream<MaybeTlsStream<tokio::net::TcpStream>>) -> Self {
         let (write, read) = ws_stream.split();
         Self {
             write: Arc::new(Mutex::new(write)),
@@ -24,10 +24,18 @@ impl WebSocketClient {
         }
     }
 
+    pub fn get_read(&self) -> Arc<Mutex<WSRead>> {
+        self.read.clone()
+    }
+
+    pub fn get_write(&self) -> Arc<Mutex<WSSink>> {
+        self.write.clone()
+    }
+
     /// Connect WebSock to url
     pub async fn connect(url: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let (ws_stream, _) = connect_async(url).await?;
-        Ok(Self::new(ws_stream, &url.to_string()))
+        Ok(Self::new(ws_stream))
     }
 
     /// Send txt
@@ -68,7 +76,7 @@ impl WebSocketClient {
     }
     
     /// Standard read handle (blocks until reader finishes)
-    pub async fn std_read_handle(&mut self) {
+    pub async fn test_read_handle(&mut self) {
         let read_clone: Arc<Mutex<WSRead>> = Arc::clone(&self.read);
         
         let read_handler = tokio::spawn(async move {
@@ -85,25 +93,28 @@ impl WebSocketClient {
             }
         });
 
-        read_handler.await.unwrap();
+        read_handler.await.expect("[!] Err with read handler");
     }
 
     pub async fn test_connection(&mut self) -> bool {
         if !self.is_connected {
             false
         } else {
-            self.send_text("Hello, string!".to_string())
-                .await
-                .unwrap();
+            match self.send_text("Hello, string!".to_string()).await {
+                Ok(_) => (),
+                Err(_) => return false,
+            };
 
             let test_json = serde_json::json!({
                 "type": "info",
                 "data": "Hello, json"
             });
-            self.send_json(&test_json)
-                .await
-                .unwrap();
-            let _ = self.std_read_handle().await;
+            
+            match self.send_json(&test_json).await {
+                Ok(_) => (),
+                Err(_) => return false,
+            };
+            //self.test_read_handle().await;
             true
         }
     }

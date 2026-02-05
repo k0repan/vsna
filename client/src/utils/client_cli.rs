@@ -1,9 +1,14 @@
 use std::io;
+use futures_util::StreamExt;
+use tokio_tungstenite::tungstenite::Message;
+
 use crate::{
     config::Config,
     utils::{
         client_connect::check_connection,
         ws::WebSocketClient,
+        file_handler::receive_file_from_server,
+        file_handler::get_bytes_of_file,
     },
 };
 
@@ -51,6 +56,7 @@ async fn show_path_client(ws_stream: &WebSocketClient) {
         return;
     }
 
+    println!("[>] Input path:");
     let mut request_path: String = String::new();
     io::stdin()
         .read_line(&mut request_path)
@@ -58,17 +64,17 @@ async fn show_path_client(ws_stream: &WebSocketClient) {
 
     let request_path: &str = request_path.trim();
 
-    if let Err(e) = ws_stream.send_text(format!("GET_PATHS {}", request_path)).await {
+    if let Err(e) = ws_stream.send_text(format!("cmd;SHOW_PATH;{}", request_path)).await {
         println!("[!] Failed to send: {}", e);
         return;
     }
     
     // Response
-    //match read.next().await {
-    //    Some(Ok(Message::Text(text))) => println!("\n[=] Files:\n{}", text),
-    //    Some(Err(e)) => println!("[!] Error: {}", e),
-    //    _ => println!("[!] No response"),
-    //}
+    match ws_stream.get_read().lock().await.next().await {
+        Some(Ok(Message::Text(text))) => println!("[=] Files:\n{}", text),
+        Some(Err(e)) => println!("[!] Error: {}", e),
+        _ => println!("[!] No response"),
+    }
 }
 
 async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient) {
@@ -83,17 +89,20 @@ async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient
 
     let request_files: &str = request_files.trim();
 
-    if let Err(e) = ws_stream.send_text(format!("DOWNLOAD_FILES {}", request_files)).await {
+    if let Err(e) = ws_stream.send_text(format!("cmd;DOWNLOAD_FILES;{}", request_files)).await {
         println!("[!] Failed to send: {}", e);
         return;
     }
     
-    // Response
-    //match read.next().await {
-    //    Some(Ok(Message::Text(text))) => println!("\n[=] Downloaded:\n{}", text),
-    //    Some(Err(e)) => println!("[!] Error: {}", e),
-    //    _ => println!("[!] No response"),
-    //}
+    //Response
+    match ws_stream.get_read().lock().await.next().await {
+        Some(Ok(Message::Binary(bytes))) => {
+            println!("\n[=] Downloaded:\n{}", bytes.len());
+            receive_file_from_server(client_path, bytes).await;
+        },
+        Some(Err(e)) => println!("[!] Error: {}", e),
+        _ => println!("[!] No response"),
+    }
 }
 
 async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
@@ -108,17 +117,21 @@ async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
 
     let client_files: &str = client_files.trim();
 
-    if let Err(e) = ws_stream.send_text(format!("SEND_FILES {}", client_files)).await {
+    if let Err(e) = ws_stream.send_text(format!("cmd;SEND_FILES;{}", client_files)).await {
         println!("[!] Failed to send: {}", e);
         return;
     }
-
-    //write sending bytes of files
+    for client_file in client_files.split(" ") {
+        if let Err(e) = ws_stream.send_binary(get_bytes_of_file(&client_path, &client_file.to_string()).await).await {
+            println!("[!] Failed to send: {}", e);
+            return;
+        }
+    }
     
-    // Response
-    //match read.next().await {
-    //    Some(Ok(Message::Text(text))) => println!("\n[=] Downloaded:\n{}", text),
-    //    Some(Err(e)) => println!("[!] Error: {}", e),
-    //    _ => println!("[!] No response"),
-    //}
+    //Response
+    match ws_stream.get_read().lock().await.next().await {
+        Some(Ok(Message::Text(text))) => println!("\n[=] Sended:\n{}", text),
+        Some(Err(e)) => println!("[!] Error: {}", e),
+        _ => println!("[!] No response"),
+    }
 }
