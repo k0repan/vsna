@@ -2,10 +2,10 @@ use std::path::Path;
 use tokio_tungstenite::tungstenite::Message;
 use tracing::{error, info};
 use walkdir::{WalkDir, Error};
-use tokio::{fs::File, task, io::AsyncReadExt};
+use tokio::task;
 use crate::{
     config::Config,
-    utils::file_message::UserFileMessage,
+    utils::filepack::FilePacket,
 };
 
 // Read the path and files include, instead of ignored
@@ -110,8 +110,8 @@ pub async fn send_file_to_client(config: &Config, location: &String) -> Option<M
     //TODO: Fragmentation, mayb RAR?
     let file_loc: String = format!("{}{}", &config.server_path, location);
     info!("Filename requested: {}", file_loc);
-    let mut file_to_send: File = File::open(file_loc).await.unwrap();
-    let mut buffer: Vec<u8> = Vec::new();
-    file_to_send.read_to_end(&mut buffer).await.unwrap();
-    Some(Message::Binary(buffer.into()))
+
+    let packet: FilePacket = FilePacket::from_file(&file_loc).await.expect("[!] Err with pack bytes");
+    let bytes: Vec<u8> = packet.to_bytes().expect("[!] Err with convert to bytes");
+    Some(Message::Binary(bytes.into()))
 }

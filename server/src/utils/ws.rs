@@ -36,11 +36,13 @@ pub async fn handle_connection(
         match msg {
             Ok(Message::Text(text)) => {
                 info!("Received text from {}: {}", addr, &text);
-                broadcast_message(&clients, Message::Text(text.clone()), addr).await;
                 if text.len() > 3 && text.trim().to_string().starts_with("cmd;") {
-                    let cmd = Command::new(&text.to_string(), config.clone());
+                    let cmd: Command = Command::new(&text.to_string(), config.clone());
                     if let Some(response) = cmd.parse_text_to_command().await {
                         broadcast_message(&clients, response, addr).await;
+                    } else {
+                        error!("Err with cmd.parse_text_to_command occured!");
+                        break;
                     }
                 }
             },
@@ -75,7 +77,7 @@ pub async fn handle_connection(
 async fn broadcast_message(clients: &Clients, msg: Message, sender: SocketAddr) {
     let clients = clients.read().await;
     for (addr, tx) in clients.iter() {
-        if *addr != sender {
+        if *addr == sender {
             tx.send(msg.clone()).ok();
         }
     }

@@ -17,7 +17,7 @@ pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
     loop {
         println!("");
         println!("[0] Exit");
-        println!("[1] Show path");
+        println!("[1] Show server path");
         println!("[2] Download files");
         println!("[3] Send files");
         println!("[4] Check connection");
@@ -82,6 +82,7 @@ async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient
         return;
     }
 
+    println!("[>] Input file/path name:");
     let mut request_files: String = String::new();
     io::stdin()
         .read_line(&mut request_files)
@@ -97,7 +98,7 @@ async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient
     //Response
     match ws_stream.get_read().lock().await.next().await {
         Some(Ok(Message::Binary(bytes))) => {
-            println!("\n[=] Downloaded:\n{}", bytes.len());
+            println!("\n[=] Downloaded: {} B", bytes.len());
             receive_file_from_server(client_path, bytes).await;
         },
         Some(Err(e)) => println!("[!] Error: {}", e),
@@ -110,6 +111,7 @@ async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
         return;
     }
 
+    println!("[>] Input file/path name:");
     let mut client_files: String = String::new();
     io::stdin()
         .read_line(&mut client_files)
@@ -122,10 +124,16 @@ async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
         return;
     }
     for client_file in client_files.split(" ") {
-        if let Err(e) = ws_stream.send_binary(get_bytes_of_file(&client_path, &client_file.to_string()).await).await {
-            println!("[!] Failed to send: {}", e);
-            return;
+        match get_bytes_of_file(&client_path, &client_file.to_string()).await {
+            Some(msg) => {
+                if let Err(e) = ws_stream.send_binary(msg.into_data().into()).await {
+                    println!("[!] Failed to send: {}", e);
+                    continue;
+                }
+            },
+            None => continue,
         }
+        
     }
     
     //Response

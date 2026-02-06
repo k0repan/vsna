@@ -1,15 +1,19 @@
-use tokio::fs::File;
-use tokio_tungstenite::tungstenite::Bytes;
+use tokio_tungstenite::tungstenite::{Bytes, Message};
+
+use crate::utils::filepack::FilePacket;
 
 pub async fn receive_file_from_server(path: &String, bytes: Bytes) {
-    // TODO: unpack bytes to file
-    tokio::fs::write(path, bytes).await.expect("[!] Err with writing file");
+    let packet: FilePacket = FilePacket::from_bytes(&bytes).expect("[!] Err with unpack from bytes");
+    println!("[=] Received file: {}", &packet.filename);
+    
+    let saved_path: String = packet.save(path).await.expect("[!] Err with saving file");
 }
 
-pub async fn get_bytes_of_file(path: &String, filename: &String) -> Vec<u8> {
-    let file: File = File::open(format!("{}{}", path, filename))
-        .await
-        .expect(format!("[!] Err with open file: {}", filename).as_str());
-    //somehow convert file by filename into the bytes
-    "".into()
+pub async fn get_bytes_of_file(path: &String, filename: &String) -> Option<Message> {
+    let file_loc: String = format!("{}{}", &path, filename);
+    println!("[=] Filename requested: {}", file_loc);
+
+    let packet: FilePacket = FilePacket::from_file(&file_loc).await.expect("[!] Err with pack bytes");
+    let bytes: Vec<u8> = packet.to_bytes().expect("[!] Err with convert to bytes");
+    Some(Message::Binary(bytes.into()))
 }
