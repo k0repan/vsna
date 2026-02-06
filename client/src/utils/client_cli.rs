@@ -82,7 +82,7 @@ async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient
         return;
     }
 
-    println!("[>] Input file/path name:");
+    println!("[>] Input file(s)/path name to download:");
     let mut request_files: String = String::new();
     io::stdin()
         .read_line(&mut request_files)
@@ -96,13 +96,16 @@ async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient
     }
     
     //Response
-    match ws_stream.get_read().lock().await.next().await {
-        Some(Ok(Message::Binary(bytes))) => {
-            println!("\n[=] Downloaded: {} B", bytes.len());
-            receive_file_from_server(client_path, bytes).await;
-        },
-        Some(Err(e)) => println!("[!] Error: {}", e),
-        _ => println!("[!] No response"),
+    while let Some(msg) = ws_stream.get_read().lock().await.next().await {
+        match msg {
+            Ok(Message::Binary(bytes)) => {
+                println!("\n[=] Downloaded: {} B", bytes.len());
+                receive_file_from_server(client_path, bytes).await;
+            },
+            Ok(Message::Close(_)) => break,
+            Err(e) => println!("[!] Error: {}", e),
+            _ => println!("[!] No response"),
+        }
     }
 }
 
@@ -111,7 +114,7 @@ async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
         return;
     }
 
-    println!("[>] Input file/path name:");
+    println!("[>] Input file(s)/path name to send:");
     let mut client_files: String = String::new();
     io::stdin()
         .read_line(&mut client_files)
@@ -138,7 +141,7 @@ async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
     
     //Response
     match ws_stream.get_read().lock().await.next().await {
-        Some(Ok(Message::Text(text))) => println!("\n[=] Sended:\n{}", text),
+        Some(Ok(Message::Text(text))) => println!("\n[=] Sended: {} B", text),
         Some(Err(e)) => println!("[!] Error: {}", e),
         _ => println!("[!] No response"),
     }

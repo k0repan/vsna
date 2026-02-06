@@ -10,6 +10,10 @@ pub struct FilePacket {
 }
 
 impl FilePacket {
+    pub fn check_size(&self) -> bool {
+        self.size <= 5_000_000
+    }
+
     pub async fn from_file(path: &String) -> Result<Self, Box<dyn std::error::Error>> {
         let data: Vec<u8> = fs::read(path).await?;
         let metadata: std::fs::Metadata = fs::metadata(path).await?;
@@ -71,10 +75,7 @@ impl FilePacket {
     }
     
     pub async fn save(&self, base_dir: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let safe_name: String = self.filename
-            .chars()
-            .filter(|c| c.is_alphanumeric() || *c == '.' || *c == '-' || *c == '_')
-            .collect::<String>();
+        let safe_name: &String = &self.filename;
         
         let path: String = format!("{}\\{}", base_dir, safe_name);
         

@@ -71,10 +71,7 @@ impl FilePacket {
     }
     
     pub async fn save(&self, base_dir: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let safe_name: String = self.filename
-            .chars()
-            .filter(|c| c.is_alphanumeric() || *c == '.' || *c == '-' || *c == '_')
-            .collect::<String>();
+        let safe_name: &String = &self.filename;
         
         let path: String = format!("{}\\{}", base_dir, safe_name);
         

@@ -7,13 +7,13 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Command {
+pub struct CommandHandler {
     pub request: String,
     pub body: String,
     config: Config,
 }
 
-impl Command {
+impl CommandHandler {
     pub fn new(text: &String, config: Config) -> Self {
         let vec: Vec<&str> = Vec::from_iter(text.split(";"));
         Self {
@@ -23,28 +23,28 @@ impl Command {
         }
     }
 
-    pub async fn parse_text_to_command(&self) -> Option<Message> {
+    pub async fn parse_text_to_command(&self) -> Vec<Option<Message>> {
         self.parse_command().await
     }
 
-    pub async fn parse_command(&self) -> Option<Message> {
+    pub async fn parse_command(&self) -> Vec<Option<Message>> {
         match self.request.as_str() {
             "DOWNLOAD_FILES" => self.download_files_server().await,
             "SHOW_PATH" => self.show_path_server().await,
             "SEND_FILES" => self.send_files_server().await,
-            _ => None,
+            _ => vec![None],
         }
     }
 
-    async fn download_files_server(&self) -> Option<Message> {
+    async fn download_files_server(&self) -> Vec<Option<Message>> {
         send_file_to_client(&self.config, &self.body).await
     }
 
-    async fn show_path_server(&self) -> Option<Message> {
-        Some(Message::Text(_read_path(&self.config, self.body.clone()).await.into()))
+    async fn show_path_server(&self) -> Vec<Option<Message>> {
+        vec![Some(Message::Text(_read_path(&self.config, self.body.clone()).await.into()))]
     }
 
-    async fn send_files_server(&self) -> Option<Message> {
-        Some(Message::Binary("Send".into()))
+    async fn send_files_server(&self) -> Vec<Option<Message>> {
+        vec![Some(Message::Binary("Send".into()))]
     }
 }

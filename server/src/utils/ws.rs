@@ -1,9 +1,9 @@
 use std::{net::SocketAddr, sync::Arc, collections::HashMap};
 use tokio::{net::TcpStream, sync::RwLock};
-use tokio_tungstenite::{accept_async, tungstenite::Message};
+use tokio_tungstenite::{accept_async, tungstenite::Message,};
 use futures_util::{SinkExt, StreamExt};
 use tracing::{info, error};
-use crate::{config::Config, utils::commands::Command};
+use crate::{config::Config, utils::commands::CommandHandler};
 
 pub type Clients = Arc<RwLock<HashMap<SocketAddr, tokio::sync::mpsc::UnboundedSender<Message>>>>;
 
@@ -37,9 +37,19 @@ pub async fn handle_connection(
             Ok(Message::Text(text)) => {
                 info!("Received text from {}: {}", addr, &text);
                 if text.len() > 3 && text.trim().to_string().starts_with("cmd;") {
-                    let cmd: Command = Command::new(&text.to_string(), config.clone());
-                    if let Some(response) = cmd.parse_text_to_command().await {
-                        broadcast_message(&clients, response, addr).await;
+                    let cmd: CommandHandler = CommandHandler::new(&text.to_string(), config.clone());
+                    let vec_msg: Vec<Option<Message>> = cmd.parse_text_to_command().await;
+                    if vec_msg.len() > 0 as usize {
+                        for msg in vec_msg {
+                            match msg {
+                                Some(response) => broadcast_message(&clients, response, addr).await,
+                                None => {
+                                    error!("Found oversized file! Skip.");
+                                    continue;
+                                },
+                            }
+                        }
+                        broadcast_message(&clients, Message::Close(None), addr).await;
                     } else {
                         error!("Err with cmd.parse_text_to_command occured!");
                         break;

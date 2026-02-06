@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::{Path, PathBuf}, collections::HashSet, hash::Hash};
 use tokio_tungstenite::tungstenite::Message;
 use tracing::{error, info};
 use walkdir::{WalkDir, Error};
@@ -24,6 +24,27 @@ pub async fn _read_path(config: &Config, input: String) -> String {
     }
 
     let mut ignored_patterns: Vec<String> = Vec::new();
+    match get_ignored_patterns(&ignored).await {
+        Ok(vec) => ignored_patterns.extend(vec),
+        Err(_) => return "!".to_string(),
+    };
+        
+    let path_obj: &Path = Path::new(&path);
+    if !path_obj.exists() {
+        error!("[!] Path {} does not exist", path);
+        return "!".to_string();
+    }
+
+    if !path_obj.is_dir() {
+        error!("[!] {} is not a directory", path);
+        return "!".to_string();
+    }
+
+    str_struct_path(path, ignored_patterns).await.unwrap()
+}
+
+async fn get_ignored_patterns(ignored: &Vec<&str>) -> Result<Vec<String>, ()> {
+    let mut ignored_patterns: Vec<String> = Vec::new();
 
     if ignored.len() > 0 {
         if ignored.iter().all(|&i|
@@ -32,7 +53,7 @@ pub async fn _read_path(config: &Config, input: String) -> String {
                 None => true,
             }) {
             error!("[!] Incorrrect ignored input");
-            return "!".to_string();
+            return Err(());
         }
         // For now support only *file*, *.fmt patterns check
         for i in ignored {
@@ -47,27 +68,16 @@ pub async fn _read_path(config: &Config, input: String) -> String {
 
             } else {
                 error!("[!] Unknown error");
-                return "!".to_string();
+                return Err(());
             }
         }
     }
-        
-    let path_obj: &Path = Path::new(&path);
-    if !path_obj.exists() {
-        error!("[!] Path {} does not exist", path);
-        return "!".to_string();
-    }
 
-    if !path_obj.is_dir() {
-        error!("[!] {} is not a directory", path);
-        return "!".to_string();
-    }
-
-    get_dirs_in_path(path, ignored_patterns).await.unwrap()
+    Ok(ignored_patterns)
 }
 
-// Print all dirs and files
-pub async fn get_dirs_in_path(path: String, ignored_patterns: Vec<String>) -> Result<String, Error> {    
+// Print all dirs and files by layers
+pub async fn str_struct_path (path: String, ignored_patterns: Vec<String>) -> Result<String, walkdir::Error> {    
     let entries_result: Result<Vec<walkdir::DirEntry>, Error> = task::spawn_blocking(move || {
         WalkDir::new(path)
             .into_iter()
@@ -106,12 +116,68 @@ pub async fn get_dirs_in_path(path: String, ignored_patterns: Vec<String>) -> Re
     Ok(result)
 }
 
-pub async fn send_file_to_client(config: &Config, location: &String) -> Option<Message> {
-    //TODO: Fragmentation, mayb RAR?
-    let file_loc: String = format!("{}{}", &config.server_path, location);
-    info!("Filename requested: {}", file_loc);
+pub async fn get_all_files_in_path(root: &String, ignored: &Vec<String>) -> Vec<PathBuf> {
+    let root_str: String= root.clone();
+    let ignored_clone: Vec<String> = ignored.clone();
+    
+    let files: Vec<PathBuf> = tokio::task::spawn_blocking(move || {
+            let mut files: Vec<PathBuf> = Vec::new();
+            for entry in WalkDir::new(&root_str) {
+                let entry = entry.unwrap();
+                let temp: String = entry.path().to_string_lossy().to_string();
+                if ignored_clone.len() > 0 {
+                    if ignored_clone.iter().any(|pattern: &String| temp.contains(pattern)) {
+                        continue;
+                    }
+                }
+                if entry.file_type().is_file() {
+                    if let Ok(abs_path) = entry.path().canonicalize() {
+                        if let Some(path_str) = abs_path.to_str() {
+                            let trimmed: &str = &path_str[4..];
+                            files.push(PathBuf::from(trimmed));
+                        }
+                    }
+                }
+            }
+            return files;
+        }
+    ).await.unwrap();
+    
+    files
+}
 
-    let packet: FilePacket = FilePacket::from_file(&file_loc).await.expect("[!] Err with pack bytes");
-    let bytes: Vec<u8> = packet.to_bytes().expect("[!] Err with convert to bytes");
-    Some(Message::Binary(bytes.into()))
+pub fn clear_duplicates<T>(vec_to_clear: &Vec<T>) -> Vec<T>
+where T: Clone + Hash + Eq,
+{
+    let mut seen: HashSet<&T> = HashSet::new();
+    let mut result: Vec<T> = Vec::new();
+    
+    for item in vec_to_clear {
+        if seen.insert(item) {
+            result.push(item.clone());
+        }
+    }
+    
+    result
+}
+
+pub async fn send_file_to_client(config: &Config, location: &String) -> Vec<Option<Message>> {
+    //TODO: Fragmentation, mayb RAR?
+    let mut vec_msg: Vec<Option<Message>> = Vec::new();
+    let root: String = format!("{}{}", &config.server_path, location);
+    let vec_files: Vec<PathBuf> = clear_duplicates(&get_all_files_in_path(&root, &Vec::new()).await);
+    for loc in vec_files {
+        info!("Filename requested: {}", loc.to_string_lossy());
+
+        let packet: FilePacket = FilePacket::from_file(&loc.to_string_lossy().to_string()).await.expect("[!] Err with pack bytes");
+        if packet.check_size() {
+            let bytes: Vec<u8> = packet.to_bytes().expect("[!] Err with convert to bytes");
+
+            let msg: Option<Message> = Some(Message::Binary(bytes.into()));
+            vec_msg.push(msg);
+        } else {
+            vec_msg.push(None);
+        }
+    }
+    vec_msg
 }
