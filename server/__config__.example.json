@@ -1,6 +1,6 @@
 {
     "address": "127.0.0.1",
-    "port": 5555,
+    "port": "5555",
     "server_path": "path/to/",
     "max_size": 1024,
     "max_clients": 1

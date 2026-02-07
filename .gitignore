@@ -1,8 +1,8 @@
-.env
 .vs
 .vscode
+.env
 .idea
-target
 Cargo.lock
+target
 out
-/server/__config__.json
+/**/__config__.json
