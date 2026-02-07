@@ -1,5 +1,6 @@
 use tokio_tungstenite::{connect_async, WebSocketStream, MaybeTlsStream, tungstenite::Message};
 use futures_util::{lock::Mutex, StreamExt, SinkExt};
+use tracing::error;
 use std::sync::Arc;
 
 type WSSink = futures_util::stream::SplitSink<WebSocketStream<MaybeTlsStream<tokio::net::TcpStream>>, Message>;
@@ -9,7 +10,6 @@ type WSRead = futures_util::stream::SplitStream<WebSocketStream<MaybeTlsStream<t
 pub struct WebSocketClient {
     write: Arc<Mutex<WSSink>>,
     read: Arc<Mutex<WSRead>>,
-    pub is_connected: bool,
 }
 
 impl WebSocketClient {
@@ -19,7 +19,20 @@ impl WebSocketClient {
         Self {
             write: Arc::new(Mutex::new(write)),
             read: Arc::new(Mutex::new(read)),
-            is_connected: true,
+        }
+    }
+
+    pub async fn check_connection(&self) -> bool {
+        if let Err(_) = self.get_write().lock().await.send(Message::Ping("cargo is ass".into())).await {
+            error!("[!] Err with sending Ping");
+            return false;
+        }
+        match self.get_read().lock().await.next().await {
+            Some(Ok(Message::Pong(_))) => true,
+            s => {
+                println!("[!] Smth happened: {:?}", s);
+                false
+            },
         }
     }
 
@@ -39,10 +52,6 @@ impl WebSocketClient {
 
     /// Send txt
     pub async fn send_text(&self, text: String) -> Result<(), Box<dyn std::error::Error>> {
-        if !self.is_connected {
-            return Err("Not connected".into());
-        }
-        
         let mut sender = self.write.lock().await;
         sender.send(Message::Text(text.into())).await?;
         Ok(())
@@ -50,10 +59,6 @@ impl WebSocketClient {
     
     /// Send bins
     pub async fn send_binary(&self, data: Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
-        if !self.is_connected {
-            return Err("Not connected".into());
-        }
-        
         let mut sender = self.write.lock().await;
         sender.send(Message::Binary(data.try_into().unwrap())).await?;
         Ok(())
@@ -70,14 +75,10 @@ impl WebSocketClient {
     pub async fn close(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let mut sender = self.write.lock().await;
         sender.send(Message::Close(None)).await?;
-        self.is_connected = false;
         Ok(())
     }
 
     pub async fn test_connection(&mut self) -> bool {
-        if !self.is_connected {
-            false
-        } else {
             match self.send_text("Hello, string!".to_string()).await {
                 Ok(_) => (),
                 Err(_) => return false,
@@ -94,5 +95,4 @@ impl WebSocketClient {
             };
             true
         }
-    }
 }

@@ -5,10 +5,6 @@ use crate::{
     utils::ws::WebSocketClient,
 };
 
-pub async fn check_connection(ws_stream: &WebSocketClient) -> bool {
-    ws_stream.is_connected
-}
-
 pub async fn client_connect(config: &Config) {
     let mut ip: String = String::new();
     println!("[>] Input IP addr:");

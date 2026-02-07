@@ -5,7 +5,6 @@ use tokio_tungstenite::tungstenite::Message;
 use crate::{
     config::Config,
     utils::{
-        client_connect::check_connection,
         ws::WebSocketClient,
         file_handler::receive_file_from_server,
         file_handler::get_bytes_of_file,
@@ -22,7 +21,8 @@ pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
         println!("[3] Send files");
         println!("[4] Check connection");
 
-        if !check_connection(&ws_stream).await {
+        if !ws_stream.check_connection().await {
+            println!("[!] Went out from Client CLI loop");
             break;
         }
 
@@ -39,10 +39,11 @@ pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
             "2" => download_files_client(&config.client_path, &ws_stream).await,
             "3" => send_files_client(&config.client_path, &ws_stream).await,
             "4" => {
-                if check_connection(&ws_stream).await {
+                if ws_stream.check_connection().await {
                     println!("[=] Connection is successfull");
                 } else {
                     println!("[!] Err with connection");
+                    break;
                 }
             },
             _ => println!("[!] Unknown command"),
@@ -52,10 +53,6 @@ pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
 
 
 async fn show_path_client(ws_stream: &WebSocketClient) {
-    if !check_connection(&ws_stream).await {
-        return;
-    }
-
     println!("[>] Input path:");
     let mut request_path: String = String::new();
     io::stdin()
@@ -70,18 +67,24 @@ async fn show_path_client(ws_stream: &WebSocketClient) {
     }
     
     // Response
-    match ws_stream.get_read().lock().await.next().await {
-        Some(Ok(Message::Text(text))) => println!("[=] Files:\n{}", text),
-        Some(Err(e)) => println!("[!] Error: {}", e),
-        _ => println!("[!] No response"),
+    while let Some(msg) = ws_stream.get_read().lock().await.next().await {
+        match msg {
+            Ok(Message::Text(text)) => {
+                println!("[=] Files:\n{}", text);
+                break;
+            },
+            Ok(Message::Pong(_)) => continue,
+            Ok(Message::Close(_)) => break,
+            s => {
+                println!("[!] Error: {:?}", s);
+                break;
+            },
+        }
     }
+    
 }
 
 async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient) {
-    if !check_connection(&ws_stream).await {
-        return;
-    }
-
     println!("[>] Input file(s)/path name to download:");
     let mut request_files: String = String::new();
     io::stdin()
@@ -101,19 +104,19 @@ async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient
             Ok(Message::Binary(bytes)) => {
                 println!("\n[=] Downloaded: {} B", bytes.len());
                 receive_file_from_server(client_path, bytes).await;
+                break;
             },
+            Ok(Message::Pong(_)) => continue,
             Ok(Message::Close(_)) => break,
-            Err(e) => println!("[!] Error: {}", e),
-            _ => println!("[!] No response"),
+            s => {
+                println!("[!] Error: {:?}", s);
+                break;
+            },
         }
     }
 }
 
 async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
-    if !check_connection(&ws_stream).await {
-        return;
-    }
-
     println!("[>] Input file(s)/path name to send:");
     let mut client_files: String = String::new();
     io::stdin()
@@ -140,9 +143,18 @@ async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
     }
     
     //Response
-    match ws_stream.get_read().lock().await.next().await {
-        Some(Ok(Message::Text(text))) => println!("\n[=] Sended: {} B", text),
-        Some(Err(e)) => println!("[!] Error: {}", e),
-        _ => println!("[!] No response"),
+    while let Some(msg) = ws_stream.get_read().lock().await.next().await {
+        match msg {
+            Ok(Message::Text(text)) => {
+                println!("\n[=] Sended: {} B", text);
+                break;
+            },
+            Ok(Message::Pong(_)) => continue,
+            Ok(Message::Close(_)) => break,
+            s => {
+                println!("[!] Error: {:?}", s);
+                break;
+        },
+        }
     }
 }

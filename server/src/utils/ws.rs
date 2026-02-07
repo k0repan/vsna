@@ -2,7 +2,7 @@ use std::{net::SocketAddr, sync::Arc, collections::HashMap};
 use tokio::{net::TcpStream, sync::RwLock};
 use tokio_tungstenite::{accept_async, tungstenite::Message,};
 use futures_util::{SinkExt, StreamExt};
-use tracing::{info, error, warn};
+use tracing::{debug, error, info, warn};
 use crate::{config::Config, utils::commands::{CommandHandler, save_file_bytes_server}};
 
 pub type Clients = Arc<RwLock<HashMap<SocketAddr, tokio::sync::mpsc::UnboundedSender<Message>>>>;
@@ -39,17 +39,21 @@ pub async fn handle_connection(
                 if text.len() > 3 && text.trim().to_string().starts_with("cmd;") {
                     let cmd: CommandHandler = CommandHandler::new(&text.to_string(), config.clone());
                     let vec_msg: Vec<Option<Message>> = cmd.parse_text_to_command().await;
+                    debug!("{:?}", vec_msg);
                     if vec_msg.len() > 0 as usize {
                         for msg in vec_msg {
                             match msg {
-                                Some(response) => broadcast_message(&clients, response, addr).await,
+                                Some(response) => {
+                                    debug!("{}", response);
+                                    broadcast_message(&clients, response, addr).await;
+                                },
                                 None => {
                                     warn!("Found oversized file! File skipped...");
                                     continue;
                                 },
                             }
                         }
-                        broadcast_message(&clients, Message::Close(None), addr).await;
+                        //broadcast_message(&clients, Message::Close(None), addr).await;
                     } else {
                         error!("Err with cmd.parse_text_to_command occured!");
                         break;
@@ -67,13 +71,20 @@ pub async fn handle_connection(
             }
             Ok(Message::Ping(data)) => {
                 if let Some(tx) = clients.read().await.get(&addr) {
-                    tx.send(Message::Pong(data)).ok();
+                    debug!("Received Ping bytes: {:?}", data);
+                    match tx.send(Message::Pong(data)) {
+                        Ok(_) => {},
+                        Err(e) => {
+                            error!("Err with send Pong: {}", e);
+                            break;
+                        }
+                    }
                 }
             }
             Ok(Message::Pong(_)) => {}
             Ok(Message::Frame(_)) => todo!(),
             Err(e) => {
-                error!("Websocker error for {}: {}", addr, e);
+                error!("Websocket error for {}: {}", addr, e);
                 break;
             }
         }
