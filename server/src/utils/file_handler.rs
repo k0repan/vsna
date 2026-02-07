@@ -9,7 +9,7 @@ use crate::{
 };
 
 // Read the path and files include, instead of ignored
-pub async fn _read_path(config: &Config, input: String) -> String {
+pub async fn get_struct_paths_files_with_ignored(config: &Config, input: String) -> String {
     let input: Vec<&str> = input.trim().split(" ").collect();
     let path: String = input[0].to_string();
     let ignored: Vec<&str> = if input.len() > 1 {
@@ -107,9 +107,9 @@ pub async fn str_struct_path (path: String, ignored_patterns: Vec<String>) -> Re
         let indent: String = "  ".repeat(depth);
         
         if entry.file_type().is_dir() {
-            result.push_str(&format!("{}📁 {}\\\n", indent, entry.file_name().to_string_lossy()));
+            result.push_str(&format!("{}\\ {}\\\n", indent, entry.file_name().to_string_lossy()));
         } else {
-            result.push_str(&format!("{}📄 {}\n", indent, entry.file_name().to_string_lossy()));
+            result.push_str(&format!("{}| {}\n", indent, entry.file_name().to_string_lossy()));
         }
     }
 
@@ -166,13 +166,13 @@ pub async fn send_file_to_client(config: &Config, location: &String) -> Vec<Opti
     let mut vec_msg: Vec<Option<Message>> = Vec::new();
     let root: String = format!("{}{}", &config.server_path, location);
     let vec_files: Vec<PathBuf> = clear_duplicates(&get_all_files_in_path(&root, &Vec::new()).await);
+
     for loc in vec_files {
         info!("Filename requested: {}", loc.to_string_lossy());
-
         let packet: FilePacket = FilePacket::from_file(&loc.to_string_lossy().to_string()).await.expect("[!] Err with pack bytes");
+        
         if packet.check_size() {
             let bytes: Vec<u8> = packet.to_bytes().expect("[!] Err with convert to bytes");
-
             let msg: Option<Message> = Some(Message::Binary(bytes.into()));
             vec_msg.push(msg);
         } else {
@@ -180,4 +180,8 @@ pub async fn send_file_to_client(config: &Config, location: &String) -> Vec<Opti
         }
     }
     vec_msg
+}
+
+pub async fn save_file_server(config: &Config, files_quant: &String) -> Vec<Option<Message>> {
+    vec![Some(Message::Pong("".into()))]
 }

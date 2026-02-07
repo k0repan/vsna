@@ -2,8 +2,8 @@ use std::{net::SocketAddr, sync::Arc, collections::HashMap};
 use tokio::{net::TcpStream, sync::RwLock};
 use tokio_tungstenite::{accept_async, tungstenite::Message,};
 use futures_util::{SinkExt, StreamExt};
-use tracing::{info, error};
-use crate::{config::Config, utils::commands::CommandHandler};
+use tracing::{info, error, warn};
+use crate::{config::Config, utils::commands::{CommandHandler, save_file_bytes_server}};
 
 pub type Clients = Arc<RwLock<HashMap<SocketAddr, tokio::sync::mpsc::UnboundedSender<Message>>>>;
 
@@ -44,7 +44,7 @@ pub async fn handle_connection(
                             match msg {
                                 Some(response) => broadcast_message(&clients, response, addr).await,
                                 None => {
-                                    error!("Found oversized file! Skip.");
+                                    warn!("Found oversized file! File skipped...");
                                     continue;
                                 },
                             }
@@ -58,7 +58,8 @@ pub async fn handle_connection(
             },
             Ok(Message::Binary(bin)) => {
                 info!("Received {} bytes from {}", bin.len(), addr);
-                broadcast_message(&clients, Message::Binary(bin), addr).await;
+                let filesize: u64 = save_file_bytes_server(&config, &bin).await;
+                broadcast_message(&clients, Message::Text(filesize.to_string().into()), addr).await;
             }
             Ok(Message::Close(_)) => {
                 info!("Client {} disconnected", addr);

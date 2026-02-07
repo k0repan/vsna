@@ -14,6 +14,10 @@ impl FilePacket {
         self.size <= 5_000_000
     }
 
+    pub fn get_size(&self) -> u64 {
+        self.size
+    }
+
     pub async fn from_file(path: &String) -> Result<Self, Box<dyn std::error::Error>> {
         let data: Vec<u8> = fs::read(path).await?;
         let metadata: std::fs::Metadata = fs::metadata(path).await?;

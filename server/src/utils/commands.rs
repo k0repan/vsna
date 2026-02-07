@@ -1,9 +1,8 @@
 use tokio_tungstenite::tungstenite::Message;
+use tracing::info;
 
 use crate::{
-    utils::file_handler::_read_path,
-    utils::file_handler::send_file_to_client,
-    config::Config,
+    config::Config, utils::{file_handler::{get_struct_paths_files_with_ignored, save_file_server, send_file_to_client}, filepack::FilePacket}
 };
 
 #[derive(Debug)]
@@ -41,10 +40,18 @@ impl CommandHandler {
     }
 
     async fn show_path_server(&self) -> Vec<Option<Message>> {
-        vec![Some(Message::Text(_read_path(&self.config, self.body.clone()).await.into()))]
+        vec![Some(Message::Text(get_struct_paths_files_with_ignored(&self.config, self.body.clone()).await.into()))]
     }
 
     async fn send_files_server(&self) -> Vec<Option<Message>> {
-        vec![Some(Message::Binary("Send".into()))]
+        save_file_server(&self.config, &self.body).await
     }
+}
+
+pub async fn save_file_bytes_server(config: &Config, bytes: &[u8]) -> u64 {
+    let packet: FilePacket = FilePacket::from_bytes(&bytes).expect("[!] Err with unpack from bytes");
+    info!("Received file: {}", &packet.filename);
+    
+    let _ = packet.save(&config.server_path).await.expect("[!] Err with saving file");
+    packet.get_size()
 }
