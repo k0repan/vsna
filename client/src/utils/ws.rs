@@ -22,15 +22,21 @@ impl WebSocketClient {
         }
     }
 
+    /// Connect WebSock to url
+    pub async fn connect(url: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let (ws_stream, _) = connect_async(url).await?;
+        Ok(Self::new(ws_stream))
+    }
+
     pub async fn check_connection(&self) -> bool {
-        if let Err(_) = self.write.lock().await.send(Message::Ping("cargo is ass".into())).await {
-            error!("[!] Err with sending Ping");
+        if let Err(e) = self.write.lock().await.send(Message::Ping("cargo is ass".into())).await {
+            error!("[!] Err with sending Ping: {}", e);
             return false;
         }
         match self.read.lock().await.next().await {
             Some(Ok(Message::Pong(_))) => true,
-            s => {
-                println!("[!] Smth happened: {:?}", s);
+            e => {
+                println!("[!] Err receiving Pong: {:?}", e);
                 false
             },
         }
@@ -38,12 +44,6 @@ impl WebSocketClient {
 
     pub async fn get_read(&self) -> Option<Result<Message, tokio_tungstenite::tungstenite::Error>>{
         self.read.lock().await.next().await
-    }
-
-    /// Connect WebSock to url
-    pub async fn connect(url: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let (ws_stream, _) = connect_async(url).await?;
-        Ok(Self::new(ws_stream))
     }
 
     /// Send txt
@@ -66,29 +66,22 @@ impl WebSocketClient {
         self.send_text(json).await?;
         Ok(())
     }
-    
-    /// Close WebSock
-    pub async fn close(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let mut sender = self.write.lock().await;
-        sender.send(Message::Close(None)).await?;
-        Ok(())
-    }
 
     pub async fn test_connection(&mut self) -> bool {
-            match self.send_text("Hello, string!".to_string()).await {
-                Ok(_) => (),
-                Err(_) => return false,
-            };
+        match self.send_text("Hello, string!".to_string()).await {
+            Ok(_) => (),
+            Err(_) => return false,
+        };
 
-            let test_json = serde_json::json!({
-                "type": "info",
-                "data": "Hello, json"
-            });
+        let test_json = serde_json::json!({
+            "type": "info",
+            "data": "Hello, json"
+        });
             
-            match self.send_json(&test_json).await {
-                Ok(_) => (),
-                Err(_) => return false,
-            };
-            true
-        }
+        match self.send_json(&test_json).await {
+            Ok(_) => (),
+            Err(_) => return false,
+        };
+        true
+    }
 }

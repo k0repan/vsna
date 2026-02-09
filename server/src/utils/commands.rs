@@ -44,7 +44,7 @@ impl CommandHandler {
     }
 
     async fn send_files_server(&self) -> Vec<Option<Message>> {
-        save_file_server(&self.config, &self.body).await
+        save_file_server().await // MOCK. real saving goes to Message::Binary handler
     }
 }
 

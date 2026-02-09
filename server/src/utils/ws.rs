@@ -1,6 +1,6 @@
 use std::{net::SocketAddr, sync::Arc, collections::HashMap};
 use tokio::{net::TcpStream, sync::RwLock};
-use tokio_tungstenite::{accept_async, tungstenite::Message,};
+use tokio_tungstenite::{accept_async, tungstenite::{Message, Utf8Bytes},};
 use futures_util::{SinkExt, StreamExt};
 use tracing::{debug, error, info, warn};
 use crate::{config::Config, utils::commands::{CommandHandler, save_file_bytes_server}};
@@ -37,27 +37,10 @@ pub async fn handle_connection(
             Ok(Message::Text(text)) => {
                 info!("Received text from {}: {}", addr, &text);
                 if text.len() > 3 && text.trim().to_string().starts_with("cmd;") {
-                    let cmd: CommandHandler = CommandHandler::new(&text.to_string(), config.clone());
-                    let vec_msg: Vec<Option<Message>> = cmd.parse_text_to_command().await;
-                    debug!("{:?}", vec_msg);
-                    if vec_msg.len() > 0 as usize {
-                        for msg in vec_msg {
-                            match msg {
-                                Some(response) => {
-                                    debug!("{}", response);
-                                    broadcast_message(&clients, response, addr).await;
-                                },
-                                None => {
-                                    warn!("Found oversized file! File skipped...");
-                                    continue;
-                                },
-                            }
-                        }
-                        //broadcast_message(&clients, Message::Close(None), addr).await;
-                    } else {
-                        error!("Err with cmd.parse_text_to_command occured!");
-                        break;
-                    }
+                    match handle_text_request(&clients, addr, text, &config).await {
+                        Ok(_) => (),
+                        Err(_) => break,
+                    };
                 }
             },
             Ok(Message::Binary(bin)) => {
@@ -103,4 +86,25 @@ async fn broadcast_message(clients: &Clients, msg: Message, sender: SocketAddr) 
             tx.send(msg.clone()).ok();
         }
     }
+}
+
+async fn handle_text_request(clients: &Clients, addr: SocketAddr, text: Utf8Bytes, config: &Config) -> Result<(), ()> {
+    let cmd: CommandHandler = CommandHandler::new(&text.to_string(), config.clone());
+    let vec_msg: Vec<Option<Message>> = cmd.parse_text_to_command().await;
+    if vec_msg.len() > 0 as usize {
+        for msg in vec_msg {
+            match msg {
+                Some(response) => {
+                    broadcast_message(&clients, response, addr).await;
+                },
+                None => {
+                    warn!("Found oversized file! File skipped...");
+                },
+            }
+        }
+    } else {
+        error!("Err with cmd.parse_text_to_command occured!");
+        return Err(())
+    }
+    Ok(())
 }

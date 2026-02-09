@@ -16,7 +16,10 @@ pub async fn receive_file_from_server(path: &String, bytes: Bytes) {
     let packet: FilePacket = FilePacket::from_bytes(&bytes).expect("[!] Err with unpack from bytes");
     println!("[=] Received file: {}", &packet.filename);
     
-    let _ = packet.save(path).await.expect("[!] Err with saving file");
+    match packet.save(path).await {
+        Ok(_) => (),
+        Err(e) => println!("{:?}", e),
+    }
 }
 
 pub async fn get_bytes_of_file(path: &String, filename: &String) -> Option<Message> {

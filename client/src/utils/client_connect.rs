@@ -1,6 +1,10 @@
 use crate::{
     config::Config,
-    utils::{client_cli::client_cli, file_handler::read_string, ws::WebSocketClient},
+    utils::{
+        client_cli::client_cli,
+        file_handler::read_string,
+        ws::WebSocketClient,
+    },
 };
 
 pub async fn client_connect(config: &Config) {
@@ -17,7 +21,7 @@ pub async fn client_connect(config: &Config) {
     };
 
     let url: String = format!("ws://{}", addr);
-    let mut ws_client = WebSocketClient::connect(&url).await.unwrap();
+    let mut ws_client = WebSocketClient::connect(&url).await.expect("[!] Err with WebSocket connection");
     println!("[=] Connected to WebSocket server");
 
     if ws_client.test_connection().await {

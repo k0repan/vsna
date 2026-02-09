@@ -1,10 +1,11 @@
 use serde::{Serialize, Deserialize};
 use tokio::fs;
 
+use crate::utils::file_handler::PATH_DELIMETER;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FilePacket {
     pub filename: String,
-    mime_type: String,
     size: u64,
     data: Vec<u8>,
 }
@@ -28,13 +29,8 @@ impl FilePacket {
             .unwrap_or("file.bin")
             .to_string();
         
-        let mime_type: String = mime_guess::from_path(&filename)
-            .first_or_octet_stream()
-            .to_string();
-        
         Ok(Self {
             filename,
-            mime_type,
             size: metadata.len(),
             data,
         })
@@ -81,7 +77,7 @@ impl FilePacket {
     pub async fn save(&self, base_dir: &str) -> Result<String, Box<dyn std::error::Error>> {
         let safe_name: &String = &self.filename;
         
-        let path: String = format!("{}\\{}", base_dir, safe_name);
+        let path: String = format!("{}{}{}", base_dir, PATH_DELIMETER, safe_name);
         
         if let Some(parent) = std::path::Path::new(&path).parent() {
             fs::create_dir_all(parent).await?;

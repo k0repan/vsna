@@ -17,11 +17,6 @@ pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
         println!("[3] Send files");
         println!("[4] Check connection");
 
-        if !ws_stream.check_connection().await {
-            println!("[!] Went out from Client CLI loop");
-            break;
-        }
-
         let choice: &str = &read_string();
         
         match choice {
@@ -38,6 +33,11 @@ pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
                 }
             },
             _ => println!("[!] Unknown command"),
+        }
+
+        if !ws_stream.check_connection().await {
+            println!("[!] Went out from Client CLI loop");
+            break;
         }
     }
 }
@@ -61,13 +61,12 @@ async fn show_path_client(ws_stream: &WebSocketClient) {
             },
             Ok(Message::Pong(_)) => continue,
             Ok(Message::Close(_)) => break,
-            s => {
-                println!("[!] Error: {:?}", s);
+            e => {
+                println!("[!] Error: {:?}", e);
                 break;
             },
         }
-    }
-    
+    }    
 }
 
 async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient) {
@@ -83,14 +82,20 @@ async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient
     while let Some(msg) = ws_stream.get_read().await {
         match msg {
             Ok(Message::Binary(bytes)) => {
-                println!("\n[=] Downloaded: {} B", bytes.len());
-                receive_file_from_server(client_path, bytes).await;
-                break;
+                if *bytes == *b"cargo is ass" {
+                    println!("[=] Download finished.");
+                    break;
+                } else {
+                    receive_file_from_server(client_path, bytes).await;
+                }
             },
             Ok(Message::Pong(_)) => continue,
-            Ok(Message::Close(_)) => break,
-            s => {
-                println!("[!] Error: {:?}", s);
+            Ok(Message::Close(s)) => {
+                println!("[=] {:?}", s);
+                break;
+            },
+            e => {
+                println!("[!] Error: {:?}", e);
                 break;
             },
         }
@@ -105,7 +110,7 @@ async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
         println!("[!] Failed to send: {}", e);
         return;
     }
-    for client_file in client_files.split(" ") {
+    for client_file in client_files.split_whitespace() {
         match get_bytes_of_file(&client_path, &client_file.to_string()).await {
             Some(msg) => {
                 if let Err(e) = ws_stream.send_binary(msg.into_data().into()).await {
@@ -115,7 +120,6 @@ async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
             },
             None => continue,
         }
-        
     }
     
     //Response
@@ -127,8 +131,8 @@ async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
             },
             Ok(Message::Pong(_)) => continue,
             Ok(Message::Close(_)) => break,
-            s => {
-                println!("[!] Error: {:?}", s);
+            e => {
+                println!("[!] Error: {:?}", e);
                 break;
         },
         }

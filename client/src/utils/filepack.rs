@@ -1,10 +1,33 @@
 use serde::{Serialize, Deserialize};
 use tokio::fs;
 
+#[cfg(unix)]
+pub const PATH_DELIMETER: &str = "/";
+#[cfg(not(unix))]
+pub const PATH_DELIMETER: &str = "\\";
+
+fn get_file_size_str(size: u64) -> String {
+    const UNITS: [&str; 3] = ["B", "KB", "MB"];
+    
+    if size == 0 {
+        return "0 B".to_string();
+    }
+    
+    let base: f64 = 1024.0;
+    let exponent: usize = ((size as f64).log(base).floor() as usize).min(UNITS.len() - 1);
+    
+    let size: f64 = size as f64 / base.powi(exponent as i32);
+    
+    if exponent == 0 {
+        format!("{} {}", size, UNITS[exponent])
+    } else {
+        format!("{:.2} {}", size, UNITS[exponent])
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FilePacket {
     pub filename: String,
-    mime_type: String,
     size: u64,
     data: Vec<u8>,
 }
@@ -20,13 +43,8 @@ impl FilePacket {
             .unwrap_or("file.bin")
             .to_string();
         
-        let mime_type: String = mime_guess::from_path(&filename)
-            .first_or_octet_stream()
-            .to_string();
-        
         Ok(Self {
             filename,
-            mime_type,
             size: metadata.len(),
             data,
         })
@@ -73,11 +91,17 @@ impl FilePacket {
     pub async fn save(&self, base_dir: &str) -> Result<String, Box<dyn std::error::Error>> {
         let safe_name: &String = &self.filename;
         
-        let path: String = format!("{}\\{}", base_dir, safe_name);
+        let path: String = format!("{}{}{}", base_dir, PATH_DELIMETER, safe_name);
+
+        if fs::try_exists(&path).await? {
+            return Err(format!("File '{}' already exists", safe_name).into());
+        }
         
         if let Some(parent) = std::path::Path::new(&path).parent() {
             fs::create_dir_all(parent).await?;
         }
+
+        println!("[=] Downloaded: {}", get_file_size_str(self.size));
         
         fs::write(&path, &self.data).await?;
         
