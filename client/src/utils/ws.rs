@@ -23,11 +23,11 @@ impl WebSocketClient {
     }
 
     pub async fn check_connection(&self) -> bool {
-        if let Err(_) = self.get_write().lock().await.send(Message::Ping("cargo is ass".into())).await {
+        if let Err(_) = self.write.lock().await.send(Message::Ping("cargo is ass".into())).await {
             error!("[!] Err with sending Ping");
             return false;
         }
-        match self.get_read().lock().await.next().await {
+        match self.read.lock().await.next().await {
             Some(Ok(Message::Pong(_))) => true,
             s => {
                 println!("[!] Smth happened: {:?}", s);
@@ -36,12 +36,8 @@ impl WebSocketClient {
         }
     }
 
-    pub fn get_read(&self) -> Arc<Mutex<WSRead>> {
-        self.read.clone()
-    }
-
-    pub fn get_write(&self) -> Arc<Mutex<WSSink>> {
-        self.write.clone()
+    pub async fn get_read(&self) -> Option<Result<Message, tokio_tungstenite::tungstenite::Error>>{
+        self.read.lock().await.next().await
     }
 
     /// Connect WebSock to url

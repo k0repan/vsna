@@ -1,10 +1,9 @@
 mod config;
 mod utils;
 
-use std::io;
 use crate::{
     config::Config,
-    utils::client_connect::client_connect,
+    utils::{client_connect::client_connect, file_handler::read_string},
 };
 
 async fn main_cli(config: &Config) {
@@ -13,12 +12,7 @@ async fn main_cli(config: &Config) {
         println!("[0] Exit");
         println!("[1] Connect");
 
-        let mut choice: String = String::new();
-        io::stdin()
-            .read_line(&mut choice)
-            .expect("[!] Err read choice");
-
-        let choice: &str = choice.trim();
+        let choice: &str = &read_string();
         
         match choice {
             "0" => break,
