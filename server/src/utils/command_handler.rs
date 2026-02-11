@@ -2,23 +2,25 @@ use tokio_tungstenite::tungstenite::Message;
 
 use crate::{
     config::Config,
-    utils::
-        file_handler::{
-            get_struct_paths_files_with_ignored,
-            save_file_server,
-            send_file_to_client,
-        }
+    utils::file_handler::{
+        convert_msg_to_close,
+        get_server_path_str,
+        save_file_server,
+        send_file_to_client,
+    },
 };
+
+pub type ServerMsg = Vec<Option<Message>>;
 
 /// Handle commands from client and parse it into msg to send back
 #[derive(Debug)]
-pub struct CommandHandler {
-    pub request: String,
-    pub body: String,
+pub struct ServerCommandHandler {
+    request: String,
+    body: String,
     config: Config,
 }
 
-impl CommandHandler {
+impl ServerCommandHandler {
     /// Read txt str as client cmd
     pub fn new(text: &String, config: Config) -> Self {
         let vec: Vec<&str> = Vec::from_iter(text.split(";"));
@@ -31,24 +33,24 @@ impl CommandHandler {
 
     /// Parse cmd as pattern
     /// TODO: encapsulate out cmd patterns as Enum
-    pub async fn parse_command(&self) -> Vec<Option<Message>> {
+    pub async fn parse_command(&self) -> ServerMsg {
         match self.request.as_str() {
             "DOWNLOAD_FILES" => self.download_files_server().await,
             "SHOW_PATH" => self.show_path_server().await,
             "SEND_FILES" => self.send_files_server().await,
-            _ => vec![None],
+            _ => vec![convert_msg_to_close("No command found".to_string())],
         }
     }
 
-    async fn download_files_server(&self) -> Vec<Option<Message>> {
+    async fn download_files_server(&self) -> ServerMsg {
         send_file_to_client(&self.config, &self.body).await
     }
 
-    async fn show_path_server(&self) -> Vec<Option<Message>> {
-        vec![Some(Message::Text(get_struct_paths_files_with_ignored(&self.config, self.body.clone()).await.into()))]
+    async fn show_path_server(&self) -> ServerMsg {
+        get_server_path_str(&self.config, &self.body).await
     }
 
-    async fn send_files_server(&self) -> Vec<Option<Message>> {
-        save_file_server().await // Decoy. real saving goes to Message::Binary handler
+    async fn send_files_server(&self) -> ServerMsg {
+        save_file_server().await // Decoy. Real saving goes to file_handler/save_file_bytes_server
     }
 }

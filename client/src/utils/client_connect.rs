@@ -22,14 +22,21 @@ pub async fn client_connect(config: &Config) {
     };
 
     let url: String = format!("ws://{}", addr);
-    let mut ws_client = WebSocketClient::connect(&url).await.expect("[!] Err with WebSocket connection");
-    println!("[=] Connected to WebSocket server");
-
-    if ws_client.test_connection().await {
-        println!("[=] Test connection successfull");
-    } else {
-        println!("[!] Err with test connection");
-        return;
+    
+    match WebSocketClient::connect(&url).await {
+        Err(_) => {
+            println!("[!] Err with WebSocket connection");
+            return;
+        },
+        Ok(mut ws_client) => {
+            println!("[=] Connected to WebSocket server");
+            if ws_client.test_connection().await {
+                println!("[=] Test connection successfull");
+            } else {
+                println!("[!] Err with test connection");
+                return;
+            }
+            client_cli(config, ws_client).await;
+        }
     }
-    client_cli(config, ws_client).await;
 }

@@ -1,14 +1,15 @@
-use tokio_tungstenite::tungstenite::Message;
-
 use crate::{
     config::Config,
     utils::{
-        file_handler::{get_bytes_of_file, read_string, receive_file_from_server}, ws::WebSocketClient
+        file_handler::read_string,
+        ws::WebSocketClient,
+        command_handler::ClientCommandHandler,
     },
 };
 
 /// Second CLI layer, if it successfully connected to WS
 pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
+    let client_handler: ClientCommandHandler = ClientCommandHandler::new(config, ws_stream);
     loop {
         println!("");
         println!("[0] Exit");
@@ -21,123 +22,27 @@ pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
         
         match choice {
             "0" => break,
-            "1" => show_path_client(&ws_stream).await,
-            "2" => download_files_client(&config.client_path, &ws_stream).await,
-            "3" => send_files_client(&config.client_path, &ws_stream).await,
+            "1" => client_handler.show_path_request().await,
+            "2" => client_handler.download_files_request().await,
+            "3" => client_handler.send_files_request().await,
             "4" => {
-                if ws_stream.check_connection().await {
-                    println!("[=] Connection is successfull");
-                } else {
-                    println!("[!] Err with connection");
-                    break;
+                match client_handler.check_connection().await {
+                    Ok(s) => {
+                        println!("{}", s);
+                        continue;
+                    },
+                    Err(e) => {
+                        println!("{}", e);
+                        break;
+                    }
                 }
             },
             _ => println!("[!] Unknown command"),
         }
 
-        if !ws_stream.check_connection().await {
-            println!("[!] Went out from Client CLI loop");
+        if let Err(e) = client_handler.check_connection().await {
+            println!("{}", e);
             break;
-        }
-    }
-}
-
-/// Get server path with all files by all layers
-async fn show_path_client(ws_stream: &WebSocketClient) {
-    println!("[>] Input path:");
-    let request_path: &str = &read_string();
-
-    if let Err(e) = ws_stream.send_text(format!("cmd;SHOW_PATH;{}", request_path)).await {
-        println!("[!] Failed to send: {}", e);
-        return;
-    }
-    
-    // Read response
-    while let Some(msg) = ws_stream.get_read().await {
-        match msg {
-            Ok(Message::Text(text)) => {
-                println!("[=] Files:\n{}", text);
-                break;
-            },
-            Ok(Message::Pong(_)) => continue,
-            Ok(Message::Close(_)) => break,
-            e => {
-                println!("[!] Error: {:?}", e);
-                break;
-            },
-        }
-    }    
-}
-
-/// Download files bytes from server
-/// Support ignoring files, fmts and paths
-async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient) {
-    println!("[>] Input file(s)/path name to download:");
-    let request_files: &str = &read_string();
-
-    if let Err(e) = ws_stream.send_text(format!("cmd;DOWNLOAD_FILES;{}", request_files)).await {
-        println!("[!] Failed to send: {}", e);
-        return;
-    }
-    
-    //Read response
-    while let Some(msg) = ws_stream.get_read().await {
-        match msg {
-            Ok(Message::Binary(bytes)) => {
-                if *bytes == *b"cargo is ass" {
-                    println!("[=] Download finished.");
-                    break;
-                } else {
-                    receive_file_from_server(client_path, bytes).await;
-                }
-            },
-            Ok(Message::Pong(_)) => continue,
-            Ok(Message::Close(s)) => {
-                println!("[=] {:?}", s);
-                break;
-            },
-            e => {
-                println!("[!] Error: {:?}", e);
-                break;
-            },
-        }
-    }
-}
-
-/// Send files from client to server
-async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
-    println!("[>] Input file(s)/path name to send:");
-    let client_files: &str = &read_string();
-
-    if let Err(e) = ws_stream.send_text(format!("cmd;SEND_FILES;{}", client_files)).await {
-        println!("[!] Failed to send: {}", e);
-        return;
-    }
-    for client_file in client_files.split_whitespace() {
-        match get_bytes_of_file(&client_path, &client_file.to_string()).await {
-            Some(msg) => {
-                if let Err(e) = ws_stream.send_binary(msg.into_data().into()).await {
-                    println!("[!] Failed to send: {}", e);
-                    continue;
-                }
-            },
-            None => continue,
-        }
-    }
-    
-    //Read response
-    while let Some(msg) = ws_stream.get_read().await {
-        match msg {
-            Ok(Message::Text(text)) => {
-                println!("\n[=] Sended: {} B", text);
-                break;
-            },
-            Ok(Message::Pong(_)) => continue,
-            Ok(Message::Close(_)) => break,
-            e => {
-                println!("[!] Error: {:?}", e);
-                break;
-        },
         }
     }
 }

@@ -1,11 +1,11 @@
-use std::{path::{Path, PathBuf}, collections::HashSet, hash::Hash};
-use tokio_tungstenite::tungstenite::Message;
+use std::{collections::HashSet, hash::Hash, path::{Path, PathBuf}};
+use tokio_tungstenite::tungstenite::{Message, protocol::{CloseFrame, frame::coding::CloseCode}};
 use tracing::{error, info};
 use walkdir::{WalkDir, Error};
 use tokio::task;
 use crate::{
     config::Config,
-    utils::filepack::FilePacket,
+    utils::{command_handler::ServerMsg, filepack::FilePacket},
 };
 
 #[cfg(unix)]
@@ -13,8 +13,24 @@ pub const PATH_DELIMETER: &str = "/";
 #[cfg(not(unix))]
 pub const PATH_DELIMETER: &str = "\\";
 
+pub fn convert_msg_to_close(msg: String) -> Option<Message> {
+    Some(Message::Close(Some(CloseFrame {
+        code: CloseCode::Error,
+        reason: msg.into(),
+    })))
+}
+
+pub async fn get_server_path_str(config: &Config, input: &String) -> ServerMsg {
+    let result_str: String = get_struct_paths_files_with_ignored(config, &input).await;
+    if result_str.as_str() == "!" {
+        vec![convert_msg_to_close(format!("Failed to resolve path: {}", input))]
+    } else {
+        vec![Some(Message::Text(result_str.into()))]
+    }
+}
+
 /// Read the path and files include, instead of ignored
-pub async fn get_struct_paths_files_with_ignored(config: &Config, input: String) -> String {
+pub async fn get_struct_paths_files_with_ignored(config: &Config, input: &String) -> String {
     let input: Vec<&str> = input.trim().split_whitespace().collect();
     let path: String = match input.get(0) {
         Some(s) => s.to_string(),
@@ -168,7 +184,7 @@ where T: Clone + Hash + Eq,
             result.push(item.clone());
         }
     }
-    
+
     result
 }
 
@@ -184,9 +200,16 @@ pub async fn send_file_to_client(config: &Config, location: &String) -> Vec<Opti
         let packet: FilePacket = FilePacket::from_file(&loc.to_string_lossy().to_string()).await.expect("[!] Err with pack bytes");
         
         if packet.check_size() {
-            let bytes: Vec<u8> = packet.to_bytes().expect("[!] Err with convert to bytes");
-            let msg: Option<Message> = Some(Message::Binary(bytes.into()));
-            vec_msg.push(msg);
+            match packet.to_bytes() {
+                Ok(bytes) => {
+                    let msg: Option<Message> = Some(Message::Binary(bytes.into()));
+                    vec_msg.push(msg);
+                },
+                Err(e) => {
+                    error!("{}", e);
+                    vec_msg.push(convert_msg_to_close(format!("Err with Filepacket.to_bytes: {}", e)));
+                },
+            }
         } else {
             vec_msg.push(None);
         }

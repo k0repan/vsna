@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// Run WS server
-async fn start_server(config: &Config) {
+async fn start_server(config: Config) {
     let addr = config.get_addr();
     let listener = TcpListener::bind(&addr).await;
     info!("WebSocket server is listening on {}", addr);
@@ -33,5 +33,5 @@ async fn main() {
     println!("{config:?}");
     tracing_subscriber::fmt::init();
 
-    start_server(&config).await;
+    start_server(config).await;
 }

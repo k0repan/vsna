@@ -7,8 +7,11 @@ use tracing::{debug, error, info, warn};
 use crate::{
     config::Config,
     utils::{
-        file_handler::save_file_bytes_server,
-        commands::CommandHandler,
+        command_handler::{
+            ServerCommandHandler,
+            ServerMsg
+        },
+        file_handler::{convert_msg_to_close, save_file_bytes_server},
     }
 };
 
@@ -62,7 +65,6 @@ pub async fn handle_connection(
             }
             Ok(Message::Ping(data)) => {
                 if let Some(tx) = clients.read().await.get(&addr) {
-                    debug!("Received Ping bytes: {:?}", data);
                     match tx.send(Message::Pong(data)) {
                         Ok(_) => {},
                         Err(e) => {
@@ -98,9 +100,12 @@ async fn broadcast_message(clients: &Clients, msg: Message, sender: SocketAddr) 
 
 /// Main command parser. Get all responses from server and pack it to Vec of msgs. Then send it
 async fn handle_text_request(clients: &Clients, addr: SocketAddr, text: Utf8Bytes, config: &Config) -> Result<(), ()> {
-    let cmd: CommandHandler = CommandHandler::new(&text.to_string(), config.clone());
-    let vec_msg: Vec<Option<Message>> = cmd.parse_command().await;
+    let cmd: ServerCommandHandler = ServerCommandHandler::new(&text.to_string(), config.clone());
+    let vec_msg: ServerMsg = cmd.parse_command().await;
     if vec_msg.len() > 0 as usize {
+        if vec_msg.iter().all(|el| el.is_none()) {
+            broadcast_message(&clients, convert_msg_to_close("All messages skipped.".to_string()).unwrap(), addr).await;
+        }
         for msg in vec_msg {
             match msg {
                 Some(response) => {
@@ -113,7 +118,7 @@ async fn handle_text_request(clients: &Clients, addr: SocketAddr, text: Utf8Byte
         }
     } else {
         error!("Err with cmd.parse_text_to_command occured!");
-        return Err(())
+        return Err(());
     }
     Ok(())
 }
