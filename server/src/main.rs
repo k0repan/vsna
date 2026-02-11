@@ -8,6 +8,7 @@ use crate::{
     config::Config, utils::ws::{Clients, handle_connection}
 };
 
+/// Run WS server
 async fn start_server(config: &Config) {
     let addr = config.get_addr();
     let listener = TcpListener::bind(&addr).await;

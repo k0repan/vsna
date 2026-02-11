@@ -7,7 +7,7 @@ use crate::{
     },
 };
 
-
+/// Second CLI layer, if it successfully connected to WS
 pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
     loop {
         println!("");
@@ -42,7 +42,7 @@ pub async fn client_cli(config: &Config, ws_stream: WebSocketClient) {
     }
 }
 
-
+/// Get server path with all files by all layers
 async fn show_path_client(ws_stream: &WebSocketClient) {
     println!("[>] Input path:");
     let request_path: &str = &read_string();
@@ -52,7 +52,7 @@ async fn show_path_client(ws_stream: &WebSocketClient) {
         return;
     }
     
-    // Response
+    // Read response
     while let Some(msg) = ws_stream.get_read().await {
         match msg {
             Ok(Message::Text(text)) => {
@@ -69,6 +69,8 @@ async fn show_path_client(ws_stream: &WebSocketClient) {
     }    
 }
 
+/// Download files bytes from server
+/// Support ignoring files, fmts and paths
 async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient) {
     println!("[>] Input file(s)/path name to download:");
     let request_files: &str = &read_string();
@@ -78,7 +80,7 @@ async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient
         return;
     }
     
-    //Response
+    //Read response
     while let Some(msg) = ws_stream.get_read().await {
         match msg {
             Ok(Message::Binary(bytes)) => {
@@ -102,6 +104,7 @@ async fn download_files_client(client_path: &String, ws_stream: &WebSocketClient
     }
 }
 
+/// Send files from client to server
 async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
     println!("[>] Input file(s)/path name to send:");
     let client_files: &str = &read_string();
@@ -122,7 +125,7 @@ async fn send_files_client(client_path: &String, ws_stream: &WebSocketClient) {
         }
     }
     
-    //Response
+    //Read response
     while let Some(msg) = ws_stream.get_read().await {
         match msg {
             Ok(Message::Text(text)) => {

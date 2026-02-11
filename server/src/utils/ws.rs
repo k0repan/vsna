@@ -3,10 +3,18 @@ use tokio::{net::TcpStream, sync::RwLock};
 use tokio_tungstenite::{accept_async, tungstenite::{Message, Utf8Bytes},};
 use futures_util::{SinkExt, StreamExt};
 use tracing::{debug, error, info, warn};
-use crate::{config::Config, utils::commands::{CommandHandler, save_file_bytes_server}};
+
+use crate::{
+    config::Config,
+    utils::{
+        file_handler::save_file_bytes_server,
+        commands::CommandHandler,
+    }
+};
 
 pub type Clients = Arc<RwLock<HashMap<SocketAddr, tokio::sync::mpsc::UnboundedSender<Message>>>>;
 
+/// Main server handler. Add clients and works with streams (write, read)
 pub async fn handle_connection(
     stream: TcpStream,
     addr: SocketAddr,
@@ -78,7 +86,7 @@ pub async fn handle_connection(
     info!("Client {} removed", addr);
 }
 
-
+/// Send msg to sender
 async fn broadcast_message(clients: &Clients, msg: Message, sender: SocketAddr) {
     let clients = clients.read().await;
     for (addr, tx) in clients.iter() {
@@ -88,9 +96,10 @@ async fn broadcast_message(clients: &Clients, msg: Message, sender: SocketAddr) 
     }
 }
 
+/// Main command parser. Get all responses from server and pack it to Vec of msgs. Then send it
 async fn handle_text_request(clients: &Clients, addr: SocketAddr, text: Utf8Bytes, config: &Config) -> Result<(), ()> {
     let cmd: CommandHandler = CommandHandler::new(&text.to_string(), config.clone());
-    let vec_msg: Vec<Option<Message>> = cmd.parse_text_to_command().await;
+    let vec_msg: Vec<Option<Message>> = cmd.parse_command().await;
     if vec_msg.len() > 0 as usize {
         for msg in vec_msg {
             match msg {

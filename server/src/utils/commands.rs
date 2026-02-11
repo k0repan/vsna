@@ -1,10 +1,16 @@
 use tokio_tungstenite::tungstenite::Message;
-use tracing::info;
 
 use crate::{
-    config::Config, utils::{file_handler::{get_struct_paths_files_with_ignored, save_file_server, send_file_to_client}, filepack::FilePacket}
+    config::Config,
+    utils::
+        file_handler::{
+            get_struct_paths_files_with_ignored,
+            save_file_server,
+            send_file_to_client,
+        }
 };
 
+/// Handle commands from client and parse it into msg to send back
 #[derive(Debug)]
 pub struct CommandHandler {
     pub request: String,
@@ -13,6 +19,7 @@ pub struct CommandHandler {
 }
 
 impl CommandHandler {
+    /// Read txt str as client cmd
     pub fn new(text: &String, config: Config) -> Self {
         let vec: Vec<&str> = Vec::from_iter(text.split(";"));
         Self {
@@ -22,10 +29,8 @@ impl CommandHandler {
         }
     }
 
-    pub async fn parse_text_to_command(&self) -> Vec<Option<Message>> {
-        self.parse_command().await
-    }
-
+    /// Parse cmd as pattern
+    /// TODO: encapsulate out cmd patterns as Enum
     pub async fn parse_command(&self) -> Vec<Option<Message>> {
         match self.request.as_str() {
             "DOWNLOAD_FILES" => self.download_files_server().await,
@@ -44,14 +49,6 @@ impl CommandHandler {
     }
 
     async fn send_files_server(&self) -> Vec<Option<Message>> {
-        save_file_server().await // MOCK. real saving goes to Message::Binary handler
+        save_file_server().await // Decoy. real saving goes to Message::Binary handler
     }
-}
-
-pub async fn save_file_bytes_server(config: &Config, bytes: &[u8]) -> u64 {
-    let packet: FilePacket = FilePacket::from_bytes(&bytes).expect("[!] Err with unpack from bytes");
-    info!("Received file: {}", &packet.filename);
-    
-    let _ = packet.save(&config.server_path).await.expect("[!] Err with saving file");
-    packet.get_size()
 }

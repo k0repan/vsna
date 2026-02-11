@@ -7,6 +7,7 @@ use crate::{
     },
 };
 
+/// Read IP and Port, and take config as default if none. Connected to WS, test it.
 pub async fn client_connect(config: &Config) {
     println!("[>] Input IP addr:");
     let ip: &str = &read_string();

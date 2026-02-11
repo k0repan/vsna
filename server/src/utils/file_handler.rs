@@ -13,7 +13,7 @@ pub const PATH_DELIMETER: &str = "/";
 #[cfg(not(unix))]
 pub const PATH_DELIMETER: &str = "\\";
 
-// Read the path and files include, instead of ignored
+/// Read the path and files include, instead of ignored
 pub async fn get_struct_paths_files_with_ignored(config: &Config, input: String) -> String {
     let input: Vec<&str> = input.trim().split_whitespace().collect();
     let path: String = match input.get(0) {
@@ -85,7 +85,7 @@ async fn get_ignored_patterns(ignored: &Vec<&str>) -> Result<Vec<String>, ()> {
     Ok(ignored_patterns)
 }
 
-// Print all dirs and files by layers
+/// Print all dirs and files by layers
 pub async fn str_struct_path (path: String, ignored_patterns: Vec<String>) -> Result<String, walkdir::Error> {    
     let entries_result: Result<Vec<walkdir::DirEntry>, Error> = task::spawn_blocking(move || {
         WalkDir::new(path)
@@ -125,6 +125,7 @@ pub async fn str_struct_path (path: String, ignored_patterns: Vec<String>) -> Re
     Ok(result)
 }
 
+/// Get array of all files in path
 pub async fn get_all_files_in_path(root: &String, ignored: &Vec<String>) -> Vec<PathBuf> {
     let root_str: String= root.clone();
     let ignored_clone: Vec<String> = ignored.clone();
@@ -155,6 +156,7 @@ pub async fn get_all_files_in_path(root: &String, ignored: &Vec<String>) -> Vec<
     files
 }
 
+/// Fast duplicates erasement
 pub fn clear_duplicates<T>(vec_to_clear: &Vec<T>) -> Vec<T>
 where T: Clone + Hash + Eq,
 {
@@ -170,6 +172,7 @@ where T: Clone + Hash + Eq,
     result
 }
 
+/// Parse file data to bytes and send to client
 pub async fn send_file_to_client(config: &Config, location: &String) -> Vec<Option<Message>> {
     //TODO: Fragmentation, mayb RAR?
     let mut vec_msg: Vec<Option<Message>> = Vec::new();
@@ -194,4 +197,13 @@ pub async fn send_file_to_client(config: &Config, location: &String) -> Vec<Opti
 
 pub async fn save_file_server() -> Vec<Option<Message>> {
     vec![Some(Message::Pong("".into()))]
+}
+
+/// Save file by sended bytes from client
+pub async fn save_file_bytes_server(config: &Config, bytes: &[u8]) -> u64 {
+    let packet: FilePacket = FilePacket::from_bytes(&bytes).expect("[!] Err with unpack from bytes");
+    info!("Received file: {}", &packet.filename);
+    
+    let _ = packet.save(&config.server_path).await.expect("[!] Err with saving file");
+    packet.get_size()
 }

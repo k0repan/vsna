@@ -3,6 +3,7 @@ use tokio_tungstenite::tungstenite::{Bytes, Message};
 
 use crate::utils::filepack::FilePacket;
 
+/// CLI input stream reader
 pub fn read_string() -> String {
     let mut read_str: String = String::new();
     io::stdin()
@@ -12,6 +13,7 @@ pub fn read_string() -> String {
     read_str.trim().to_string()
 }
 
+/// Receive and save file from bytes
 pub async fn receive_file_from_server(path: &String, bytes: Bytes) {
     let packet: FilePacket = FilePacket::from_bytes(&bytes).expect("[!] Err with unpack from bytes");
     println!("[=] Received file: {}", &packet.filename);
@@ -22,6 +24,7 @@ pub async fn receive_file_from_server(path: &String, bytes: Bytes) {
     }
 }
 
+/// Parse file from client_path to msg bytes
 pub async fn get_bytes_of_file(path: &String, filename: &String) -> Option<Message> {
     let file_loc: String = format!("{}{}", &path, filename);
     println!("[=] Filename requested: {}", file_loc);

@@ -6,6 +6,7 @@ use std::sync::Arc;
 type WSSink = futures_util::stream::SplitSink<WebSocketStream<MaybeTlsStream<tokio::net::TcpStream>>, Message>;
 type WSRead = futures_util::stream::SplitStream<WebSocketStream<MaybeTlsStream<tokio::net::TcpStream>>>;
 
+/// WebSocket ctruct to handle read, write streams on client
 #[derive(Debug, Clone)]
 pub struct WebSocketClient {
     write: Arc<Mutex<WSSink>>,
@@ -28,6 +29,7 @@ impl WebSocketClient {
         Ok(Self::new(ws_stream))
     }
 
+    /// Ping-pong
     pub async fn check_connection(&self) -> bool {
         if let Err(e) = self.write.lock().await.send(Message::Ping("cargo is ass".into())).await {
             error!("[!] Err with sending Ping: {}", e);
@@ -42,6 +44,7 @@ impl WebSocketClient {
         }
     }
 
+    /// Get read stream of WS
     pub async fn get_read(&self) -> Option<Result<Message, tokio_tungstenite::tungstenite::Error>>{
         self.read.lock().await.next().await
     }
@@ -67,6 +70,7 @@ impl WebSocketClient {
         Ok(())
     }
 
+    /// Send txt and json msg
     pub async fn test_connection(&mut self) -> bool {
         match self.send_text("Hello, string!".to_string()).await {
             Ok(_) => (),

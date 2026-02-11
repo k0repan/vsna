@@ -6,6 +6,7 @@ pub const PATH_DELIMETER: &str = "/";
 #[cfg(not(unix))]
 pub const PATH_DELIMETER: &str = "\\";
 
+/// File size formatter (to B, KB, MB)
 fn get_file_size_str(size: u64) -> String {
     const UNITS: [&str; 3] = ["B", "KB", "MB"];
     
@@ -25,6 +26,8 @@ fn get_file_size_str(size: u64) -> String {
     }
 }
 
+/// File message struct. Pack and unpack bytes of msg
+/// TODO: encapsulate out, cuz server has the same
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FilePacket {
     pub filename: String,
