@@ -21,11 +21,9 @@ where D: de::Deserializer<'de> {
 
 impl Config {
     /// Read __config__.json as env file
-    pub fn new() -> Self {
-        let res: String = fs::read_to_string("__config__.json")
-        .expect("[!] Can't read json");
-
-        serde_json::from_str(&res).unwrap()
+    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+        let res: String = fs::read_to_string("__config__.json")?;
+        Ok(serde_json::from_str(&res)?)
     }
 
     /// Get WS addr to connect

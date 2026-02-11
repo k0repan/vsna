@@ -1,9 +1,9 @@
 mod config;
 mod utils;
 
-use std::{sync::Arc, collections::HashMap};
+use std::{collections::HashMap, sync::Arc};
 use tokio::{net::TcpListener, sync::RwLock};
-use tracing::info;
+use tracing::{error, info};
 use crate::{
     config::Config, utils::ws::{Clients, handle_connection}
 };
@@ -18,7 +18,7 @@ async fn start_server(config: Config) {
 
     while let Ok((stream, addr)) = listener
         .as_ref()
-        .expect("[!] Err with Listener")
+        .unwrap()
         .accept()
         .await
     {
@@ -29,9 +29,12 @@ async fn start_server(config: Config) {
 
 #[tokio::main]
 async fn main() {
-    let config: Config = Config::new();
-    println!("{config:?}");
     tracing_subscriber::fmt::init();
 
-    start_server(config).await;
+    if let Ok(config) = Config::new() {
+        println!("{config:?}");
+        start_server(config).await;
+    } else {
+        error!("Error with config");
+    }
 }

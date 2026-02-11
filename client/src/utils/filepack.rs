@@ -1,3 +1,5 @@
+use std::time::UNIX_EPOCH;
+
 use serde::{Serialize, Deserialize};
 use tokio::fs;
 
@@ -5,6 +7,8 @@ use tokio::fs;
 pub const PATH_DELIMETER: &str = "/";
 #[cfg(not(unix))]
 pub const PATH_DELIMETER: &str = "\\";
+
+type BoxedErr = Box<dyn std::error::Error + Send + Sync>;
 
 /// File size formatter (to B, KB, MB)
 fn get_file_size_str(size: u64) -> String {
@@ -33,10 +37,12 @@ pub struct FilePacket {
     pub filename: String,
     size: u64,
     data: Vec<u8>,
+    //last_modified: std::time::SystemTime,
 }
 
 impl FilePacket {
-    pub async fn from_file(path: &String) -> Result<Self, Box<dyn std::error::Error>> {
+    /// Get FilePacket from file by its location
+    pub async fn from_file(path: &String) -> Result<Self, BoxedErr> {
         let data: Vec<u8> = fs::read(path).await?;
         let metadata: std::fs::Metadata = fs::metadata(path).await?;
         
@@ -50,23 +56,28 @@ impl FilePacket {
             filename,
             size: metadata.len(),
             data,
+            //last_modified: metadata.modified().unwrap(),
         })
     }
     
-    pub fn to_bytes(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-        let metadata_json: String = serde_json::to_string(self)?;
-        
+    /// Parse Packet to Vec<u8> (bytes)
+    pub fn to_bytes(&self) -> Result<Vec<u8>, BoxedErr> {
         let mut packet: Vec<u8> = Vec::new();
         
+        let metadata_json: String = serde_json::to_string(self)?;
         let json_len: u32 = metadata_json.len() as u32;
+        //let modified_time: &[u8; _] = &self.last_changes.duration_since(UNIX_EPOCH)?.as_secs().to_be_bytes();
+        
         packet.extend_from_slice(&json_len.to_le_bytes());
         packet.extend_from_slice(metadata_json.as_bytes());
+        //packet.extend_from_slice(modified_time);
         packet.extend_from_slice(&self.data);
         
         Ok(packet)
     }
 
-    pub fn from_bytes(data: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
+    /// Parse Packet from bytes
+    pub fn from_bytes(data: &[u8]) -> Result<Self, BoxedErr> {
         if data.len() < 4 {
             return Err("Not enough data".into());
         }
@@ -91,7 +102,8 @@ impl FilePacket {
         Ok(packet)
     }
     
-    pub async fn save(&self, base_dir: &str) -> Result<String, Box<dyn std::error::Error>> {
+    /// Save file on PC in base_dir
+    pub async fn save(&self, base_dir: &str) -> Result<String, BoxedErr> {
         let safe_name: &String = &self.filename;
         
         let path: String = format!("{}{}{}", base_dir, PATH_DELIMETER, safe_name);
@@ -103,11 +115,9 @@ impl FilePacket {
         if let Some(parent) = std::path::Path::new(&path).parent() {
             fs::create_dir_all(parent).await?;
         }
-
-        println!("[=] Downloaded: {}", get_file_size_str(self.size));
         
         fs::write(&path, &self.data).await?;
         
-        Ok(path)
+        Ok(get_file_size_str(self.size))
     }
 }

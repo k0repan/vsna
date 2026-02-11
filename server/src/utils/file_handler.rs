@@ -189,7 +189,7 @@ where T: Clone + Hash + Eq,
 }
 
 /// Parse file data to bytes and send to client
-pub async fn send_file_to_client(config: &Config, location: &String) -> Vec<Option<Message>> {
+pub async fn send_file_to_client(config: &Config, location: &String) -> ServerMsg {
     //TODO: Fragmentation, mayb RAR?
     let mut vec_msg: Vec<Option<Message>> = Vec::new();
     let root: String = format!("{}{}", &config.server_path, location);
@@ -223,10 +223,23 @@ pub async fn save_file_server() -> Vec<Option<Message>> {
 }
 
 /// Save file by sended bytes from client
-pub async fn save_file_bytes_server(config: &Config, bytes: &[u8]) -> u64 {
-    let packet: FilePacket = FilePacket::from_bytes(&bytes).expect("[!] Err with unpack from bytes");
-    info!("Received file: {}", &packet.filename);
-    
-    let _ = packet.save(&config.server_path).await.expect("[!] Err with saving file");
-    packet.get_size()
+pub async fn save_file_bytes_server(config: &Config, bytes: &[u8]) -> Message {
+    match FilePacket::from_bytes(&bytes) {
+        Ok(packet) => {
+            info!("Received file: {}", &packet.filename);
+            
+            match packet.save(&config.server_path).await {
+                Ok(_) => (),
+                Err(e) => {
+                    error!("Err with saving file: {}", e);
+                    return convert_msg_to_close(e.to_string()).unwrap();
+                },
+            };
+            Message::Text(packet.get_size().to_string().into())
+        },
+        Err(e) => {
+            error!("Err with from_bytes: {}", e);
+            return convert_msg_to_close(e.to_string()).unwrap();
+        },
+    }
 }

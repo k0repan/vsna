@@ -2,7 +2,7 @@ use std::{net::SocketAddr, sync::Arc, collections::HashMap};
 use tokio::{net::TcpStream, sync::RwLock};
 use tokio_tungstenite::{accept_async, tungstenite::{Message, Utf8Bytes},};
 use futures_util::{SinkExt, StreamExt};
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
 use crate::{
     config::Config,
@@ -56,8 +56,7 @@ pub async fn handle_connection(
             },
             Ok(Message::Binary(bin)) => {
                 info!("Received {} bytes from {}", bin.len(), addr);
-                let filesize: u64 = save_file_bytes_server(&config, &bin).await;
-                broadcast_message(&clients, Message::Text(filesize.to_string().into()), addr).await;
+                broadcast_message(&clients, save_file_bytes_server(&config, &bin).await, addr).await;
             }
             Ok(Message::Close(_)) => {
                 info!("Client {} disconnected", addr);
@@ -104,18 +103,21 @@ async fn handle_text_request(clients: &Clients, addr: SocketAddr, text: Utf8Byte
     let vec_msg: ServerMsg = cmd.parse_command().await;
     if vec_msg.len() > 0 as usize {
         if vec_msg.iter().all(|el| el.is_none()) {
+            warn!("All files are oversized... Wtf bro?");
             broadcast_message(&clients, convert_msg_to_close("All messages skipped.".to_string()).unwrap(), addr).await;
-        }
-        for msg in vec_msg {
-            match msg {
-                Some(response) => {
-                    broadcast_message(&clients, response, addr).await;
-                },
-                None => {
-                    warn!("Found oversized file! File skipped...");
-                },
+        } else {
+            for msg in vec_msg {
+                match msg {
+                    Some(response) => {
+                        broadcast_message(&clients, response, addr).await;
+                    },
+                    None => {
+                        warn!("Found oversized file! File skipped...");
+                    },
+                }
             }
         }
+        
     } else {
         error!("Err with cmd.parse_text_to_command occured!");
         return Err(());

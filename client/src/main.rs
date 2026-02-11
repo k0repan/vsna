@@ -24,8 +24,10 @@ async fn main_cli(config: &Config) {
 
 #[tokio::main]
 async fn main() {
-    let config: Config = Config::new();
-    println!("{config:?}");
-
-    main_cli(&config).await;
+    if let Ok(config) = Config::new() {
+        println!("{config:?}");
+        main_cli(&config).await;
+    } else {
+        println!("[!] Err with make config")
+    }
 }

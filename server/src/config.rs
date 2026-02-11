@@ -13,11 +13,9 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new() -> Self {
-        let res = fs::read_to_string("__config__.json")
-        .expect("[!] Can't read json");
-
-        serde_json::from_str(&res).unwrap()
+    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+        let res: String = fs::read_to_string("__config__.json")?;
+        Ok(serde_json::from_str(&res)?)
     }
 
     pub fn get_addr(&self) -> String {

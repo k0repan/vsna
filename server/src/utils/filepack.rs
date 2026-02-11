@@ -3,6 +3,8 @@ use tokio::fs;
 
 use crate::utils::file_handler::PATH_DELIMETER;
 
+type BoxedErr = Box<dyn std::error::Error + Send + Sync>;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FilePacket {
     pub filename: String,
@@ -19,7 +21,7 @@ impl FilePacket {
         self.size
     }
 
-    pub async fn from_file(path: &String) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn from_file(path: &String) -> Result<Self, BoxedErr> {
         let data: Vec<u8> = fs::read(path).await?;
         let metadata: std::fs::Metadata = fs::metadata(path).await?;
         
@@ -36,7 +38,7 @@ impl FilePacket {
         })
     }
     
-    pub fn to_bytes(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    pub fn to_bytes(&self) -> Result<Vec<u8>, BoxedErr> {
         let metadata_json: String = serde_json::to_string(self)?;
         
         let mut packet: Vec<u8> = Vec::new();
@@ -49,7 +51,7 @@ impl FilePacket {
         Ok(packet)
     }
 
-    pub fn from_bytes(data: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_bytes(data: &[u8]) -> Result<Self, BoxedErr> {
         if data.len() < 4 {
             return Err("Not enough data".into());
         }
@@ -74,7 +76,7 @@ impl FilePacket {
         Ok(packet)
     }
     
-    pub async fn save(&self, base_dir: &str) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn save(&self, base_dir: &str) -> Result<String, BoxedErr> {
         let safe_name: &String = &self.filename;
         
         let path: String = format!("{}{}{}", base_dir, PATH_DELIMETER, safe_name);
