@@ -1,31 +1,40 @@
 mod config;
-mod ws;
+mod utils;
 
-use std::net::SocketAddr;
-use std::sync::Arc;
-use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::RwLock;
-use tokio_tungstenite::{accept_async, tungstenite::Message};
-use futures_util::{SinkExt, StreamExt};
-use std::collections::HashMap;
-use tracing::{info, error, warn};
-use crate::ws::{Clients, handle_connection};
+use std::{collections::HashMap, sync::Arc};
+use tokio::{net::TcpListener, sync::RwLock};
+use tracing::{error, info};
+use crate::{
+    config::Config, utils::ws::{Clients, handle_connection}
+};
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let config: config::Config = config::Config::new();
-    println!("{config:?}");
-    tracing_subscriber::fmt::init();
-
-    let addr = format!("{}:{}", config.address, config.port);
-    let listener = TcpListener::bind(&addr).await?;
-    info!("Websocker server is listening on {}", addr);
+/// Run WS server
+async fn start_server(config: Config) {
+    let addr = config.get_addr();
+    let listener = TcpListener::bind(&addr).await;
+    info!("WebSocket server is listening on {}", addr);
 
     let clients: Clients = Arc::new(RwLock::new(HashMap::new()));
 
-    while let Ok((stream, addr)) = listener.accept().await {
-        tokio::spawn(handle_connection(stream, addr, clients.clone()));
+    while let Ok((stream, addr)) = listener
+        .as_ref()
+        .unwrap()
+        .accept()
+        .await
+    {
+        tokio::spawn(handle_connection(stream, addr, clients.clone(), config.clone()));
     }
+}
 
-    Ok(())
+
+#[tokio::main]
+async fn main() {
+    tracing_subscriber::fmt::init();
+
+    if let Ok(config) = Config::new() {
+        println!("{config:?}");
+        start_server(config).await;
+    } else {
+        error!("Error with config");
+    }
 }
