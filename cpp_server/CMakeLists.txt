@@ -22,17 +22,18 @@ else()
     message(FATAL_ERROR "Boost not found!")
 endif()
 
-set(SOURCES
-    server/main.cpp
-)
+include(FetchContent)
 
-set(HEADERS
-)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_MakeAvailable(json)
+
+file(GLOB SOURCES "server/*.cpp")
+set(HEADERS server/config.h)
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES} nlohmann_json::nlohmann_json)
 

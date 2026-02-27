@@ -6,5 +6,5 @@ target
 build
 Cargo.lock
 out
-/server/__config__.json
+cpp_server/**/__config__.json
 **.exe
