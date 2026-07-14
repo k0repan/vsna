@@ -1,11 +1,11 @@
 use tokio_tungstenite::tungstenite::Message;
-
 use crate::{
     config::Config, utils::{
         file_handler::{
             get_bytes_of_file,
             read_string,
             receive_file_from_server,
+            get_struct_paths_files_with_ignored,
         },
         ws::WebSocketClient,
     }
@@ -31,7 +31,7 @@ impl<'a> ClientCommandHandler<'a> {
         let request_path: &str = &read_string();
         
         if let Err(e) = self.ws_stream.send_text(format!("cmd;SHOW_PATH;{}", request_path)).await {
-            println!("[!] Failed to send: {}", e);
+            eprintln!("[!] Failed to send: {}", e);
             return;
         }
         
@@ -45,12 +45,12 @@ impl<'a> ClientCommandHandler<'a> {
                 Ok(Message::Pong(_)) => continue,
                 Ok(Message::Close(close)) => {
                     if let Some(some) = close {
-                        println!("[!] CloseFrame: {}", some);
+                        eprintln!("[!] CloseFrame: {}", some);
                     }
                     break;
                 },
                 e => {
-                    println!("[!] Error: {:?}", e);
+                    eprintln!("[!] Error: {:?}", e);
                     break;
                 },
             }
@@ -64,7 +64,7 @@ impl<'a> ClientCommandHandler<'a> {
         let request_files: &str = &read_string();
 
         if let Err(e) = self.ws_stream.send_text(format!("cmd;DOWNLOAD_FILES;{}", request_files)).await {
-            println!("[!] Failed to send: {}", e);
+            eprintln!("[!] Failed to send: {}", e);
             return;
         }
 
@@ -82,12 +82,12 @@ impl<'a> ClientCommandHandler<'a> {
                 Ok(Message::Pong(_)) => continue,
                 Ok(Message::Close(close)) => {
                     if let Some(some) = close {
-                        println!("[!] CloseFrame: {}", some);
+                        eprintln!("[!] CloseFrame: {}", some);
                     }
                     break;
                 },
                 e => {
-                    println!("[!] Error: {:?}", e);
+                    eprintln!("[!] Error: {:?}", e);
                     break;
                 },
             }
@@ -96,18 +96,19 @@ impl<'a> ClientCommandHandler<'a> {
 
     /// Send files from client to server
     pub async fn send_files_request(&self) {
+        println!("[=] Client path:{}", get_struct_paths_files_with_ignored(&self.config, &"".to_string()).await);
         println!("[>] Input file(s)/path name to send:");
         let client_files: &str = &read_string();
 
         if let Err(e) = self.ws_stream.send_text(format!("cmd;SEND_FILES;{}", client_files)).await {
-            println!("[!] Failed to send: {}", e);
+            eprintln!("[!] Failed to send: {}", e);
             return;
         }
         for client_file in client_files.split_whitespace() {
             match get_bytes_of_file(&self.config.client_path, &client_file.to_string()).await {
                 Some(msg) => {
                     if let Err(e) = self.ws_stream.send_binary(msg.into_data().into()).await {
-                        println!("[!] Failed to send: {}", e);
+                        eprintln!("[!] Failed to send: {}", e);
                         continue;
                     }
                 },
@@ -125,12 +126,12 @@ impl<'a> ClientCommandHandler<'a> {
                 Ok(Message::Pong(_)) => continue,
                 Ok(Message::Close(close)) => {
                     if let Some(some) = close {
-                        println!("[!] CloseFrame: {}", some);
+                        eprintln!("[!] CloseFrame: {}", some);
                     }
                     break;
                 },
                 e => {
-                    println!("[!] Error: {:?}", e);
+                    eprintln!("[!] Error: {:?}", e);
                     break;
             },
             }

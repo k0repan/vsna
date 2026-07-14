@@ -38,7 +38,7 @@ impl WebSocketClient {
         match self.read.lock().await.next().await {
             Some(Ok(Message::Pong(_))) => true,
             e => {
-                println!("[!] Err receiving Pong: {:?}", e);
+                eprintln!("[!] Err receiving Pong: {:?}", e);
                 false
             },
         }

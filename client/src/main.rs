@@ -17,7 +17,7 @@ async fn main_cli(config: &Config) {
         match choice {
             "0" => break,
             "1" => client_connect(&config).await,
-            _ => println!("[!] Unknown command")
+            _ => eprintln!("[!] Unknown command")
         }
     }
 }
@@ -28,6 +28,6 @@ async fn main() {
         println!("{config:?}");
         main_cli(&config).await;
     } else {
-        println!("[!] Err with make config")
+        eprintln!("[!] Err with make config")
     }
 }

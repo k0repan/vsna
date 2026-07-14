@@ -25,7 +25,7 @@ pub async fn client_connect(config: &Config) {
     
     match WebSocketClient::connect(&url).await {
         Err(_) => {
-            println!("[!] Err with WebSocket connection");
+            eprintln!("[!] Err with WebSocket connection");
             return;
         },
         Ok(mut ws_client) => {
@@ -33,7 +33,7 @@ pub async fn client_connect(config: &Config) {
             if ws_client.test_connection().await {
                 println!("[=] Test connection successfull");
             } else {
-                println!("[!] Err with test connection");
+                eprintln!("[!] Err with test connection");
                 return;
             }
             client_cli(config, ws_client).await;
