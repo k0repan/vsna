@@ -32,18 +32,35 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
-
-# Linker
-file(GLOB_RECURSE SOURCES "server/*.cpp")
-file(GLOB_RECURSE HEADERS "server/*.h" "server/*.hpp")
-
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
-
-target_include_directories(${PROJECT_NAME} PRIVATE include)
-target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
-
-target_link_libraries(${PROJECT_NAME} PRIVATE
-${Boost_LIBRARIES}
-nlohmann_json::nlohmann_json
+set(INCLUDE_DIRS
+    config/
 )
 
+set(LIB_SOURCES
+    config/config.cpp
+)
+
+set(LINK_LIBRARIES
+    ${Boost_LIBRARIES}
+    nlohmann_json::nlohmann_json
+)
+
+# Core
+add_library(core STATIC ${LIB_SOURCES})
+target_link_libraries(core PRIVATE ${LINK_LIBRARIES})
+target_include_directories(core PRIVATE ${INCLUDE_DIRS})
+
+# Server
+add_executable(
+    server
+    server/main.cpp
+    server/server.cpp
+)
+target_link_libraries(server PRIVATE
+    core
+    ${LINK_LIBS}
+)
+target_include_directories(server PRIVATE 
+    ${INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
