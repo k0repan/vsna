@@ -24,7 +24,7 @@ Config Config::loadFromFile(STRING_ARG filename) {
 void Config::setIp(STRING_ARG _ip) {
     std::stringstream ss(_ip);
     std::string part;
-    int index = 0;
+    int index{ 0 };
     
     while (std::getline(ss, part, '.') && index < 4) {
         if (part.empty()) {
@@ -32,7 +32,7 @@ void Config::setIp(STRING_ARG _ip) {
         }
         
         for (char c : part) {
-            if (!std::isdigit(static_cast<unsigned char>(c))) {
+            if (!std::isdigit(static_cast<uint8_t>(c))) {
                 throw std::invalid_argument("[!] Non-digit character in IP part: " + part);
             }
         }
@@ -42,7 +42,7 @@ void Config::setIp(STRING_ARG _ip) {
             throw std::out_of_range("[!] IP part out of range (0-255): " + part);
         }
         
-        ip[index++] = static_cast<unsigned char>(num);
+        ip[index++] = static_cast<uint8_t>(num);
     }
     
     if (index != 4) {
@@ -68,31 +68,29 @@ void Config::setMaxClients(STRING_ARG _max_clients) {
     this->max_clients = max_clients_int;
 }
 
-void Config::setServerPath(STRING_ARG _server_path) {
-    namespace fs = std::filesystem;
-    
+void Config::setServerPath(STRING_ARG _server_path) {    
     if (_server_path.empty()) {
         throw std::invalid_argument("[!] Server path cannot be empty");
     }
     
-    fs::path path(_server_path);
+    std::filesystem::path path(_server_path);
     
     try {
-        if (!fs::exists(path)) {
+        if (!std::filesystem::exists(path)) {
             throw std::runtime_error("[!] Server path does not exist: " + _server_path);
         }
         
-        if (!fs::is_directory(path)) {
+        if (!std::filesystem::is_directory(path)) {
             throw std::runtime_error("[!] Server path is not a directory: " + _server_path);
         }
         
-        auto status = fs::status(path);
-        if ((status.permissions() & fs::perms::owner_read) == fs::perms::none) {
+        auto status = std::filesystem::status(path);
+        if ((status.permissions() & std::filesystem::perms::owner_read) == std::filesystem::perms::none) {
             throw std::runtime_error("[!] Server path is not readable: " + _server_path);
         }
         
-        this->server_path = fs::canonical(path).string();
-    } catch (const fs::filesystem_error& e) {
+        this->server_path = std::filesystem::canonical(path).string();
+    } catch (const std::filesystem::filesystem_error& e) {
         throw std::runtime_error("[!] Filesystem error: " + std::string(e.what()));
     }
 }

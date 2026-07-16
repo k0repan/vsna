@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <sstream>
 #include <stdexcept>
+#include <cstdint>
 #include <nlohmann/json.hpp>
 
 #define STRING_ARG const std::string&
