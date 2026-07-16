@@ -4,7 +4,5 @@
 .idea
 target
 build
-Cargo.lock
 out
-cpp_server/**/__config__.json
-**.exe
+__config__.json
