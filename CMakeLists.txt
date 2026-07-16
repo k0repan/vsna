@@ -32,6 +32,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
+
 # Linker
 file(GLOB_RECURSE SOURCES "server/*.cpp")
 file(GLOB_RECURSE HEADERS "server/*.h" "server/*.hpp")
