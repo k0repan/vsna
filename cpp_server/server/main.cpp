@@ -2,9 +2,6 @@
 #include <thread>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/core.hpp>
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 #include "config.h"
 
 using tcp = boost::asio::ip::tcp;
@@ -13,8 +10,6 @@ void start_server(const Config& config) {
 
     auto const ip = boost::asio::ip::make_address(config.ip);
     auto const port = config.port;
-
-    spdlog::info("WebSocket server is listening on {}", config.get_addr());
 
     boost::asio::io_context ioc { 1 };
     tcp::acceptor acceptor { ioc, {ip, port} };
@@ -42,11 +37,10 @@ void start_server(const Config& config) {
 
 int main() {
     try {
-        spdlog::set_level(spdlog::level::debug);
         const Config config = Config::load_from_file("");
         start_server(config);
     } catch (const std::exception& e) {
-        spdlog::error("Error: ", e.what());
+        std::cerr << e.what() << std::endl;
         return 1;
     }
     return 0;

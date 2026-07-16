@@ -25,35 +25,12 @@ endif()
 include(FetchContent)
 
 # JSON
-FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
-FetchContent_MakeAvailable(json)
-
-
-# Logger
-FetchContent_Declare(spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG v1.12.0
-    GIT_SHALLOW TRUE
+FetchContent_Declare(
+  json
+  GIT_REPOSITORY https://github.com/nlohmann/json
+  GIT_TAG v3.12.0
 )
-
-FetchContent_GetProperties(spdlog)
-
-if(NOT spdlog_POPULATED)
-    FetchContent_Populate(spdlog)
-    
-    if(EXISTS ${spdlog_SOURCE_DIR}/CMakeLists.txt)
-        set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-        set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
-        set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "" FORCE)
-        
-        add_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR})
-    else()
-        message(WARNING "spdlog CMakeLists.txt not found, using header-only mode")
-        add_library(spdlog INTERFACE)
-        target_include_directories(spdlog INTERFACE ${spdlog_SOURCE_DIR}/include)
-    endif()
-endif()
-
+FetchContent_MakeAvailable(json)
 
 # Linker
 file(GLOB_RECURSE SOURCES "server/*.cpp")
@@ -67,6 +44,5 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE
 ${Boost_LIBRARIES}
 nlohmann_json::nlohmann_json
-spdlog::spdlog
 )
 
