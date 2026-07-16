@@ -43,7 +43,7 @@ void start_server(const Config& config) {
 int main() {
     try {
         spdlog::set_level(spdlog::level::debug);
-        Config config = Config::from_file();
+        const Config config = Config::load_from_file("");
         start_server(config);
     } catch (const std::exception& e) {
         spdlog::error("Error: ", e.what());
