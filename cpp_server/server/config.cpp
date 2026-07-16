@@ -8,7 +8,7 @@ Config Config::from_file(const std::string& filename) {
     std::fstream file;
     file.open(filename);
     if (!file.is_open()) {
-        throw std::runtime_error("Cannot open config file: " + filename);
+        throw std::runtime_error("[!] Cannot open config file: " + filename);
     }
     
     json j;
@@ -17,5 +17,5 @@ Config Config::from_file(const std::string& filename) {
 }
     
 std::string Config::get_addr() const {
-    return address + ":" + port;
+    return ip + ":" + std::to_string(port);
 }

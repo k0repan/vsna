@@ -11,13 +11,13 @@ using tcp = boost::asio::ip::tcp;
 
 void start_server(const Config& config) {
 
-    auto const address = boost::asio::ip::make_address(config.address);
-    auto const port = static_cast<unsigned short>(std::stoi(config.port));
+    auto const ip = boost::asio::ip::make_address(config.ip);
+    auto const port = config.port;
 
     spdlog::info("WebSocket server is listening on {}", config.get_addr());
 
     boost::asio::io_context ioc { 1 };
-    tcp::acceptor acceptor { ioc, {address, port} };
+    tcp::acceptor acceptor { ioc, {ip, port} };
 
     while (1) {
         tcp::socket socket { ioc };

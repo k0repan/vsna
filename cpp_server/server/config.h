@@ -8,11 +8,10 @@ using json = nlohmann::json;
 
 class Config {
 public:
-    std::string address;
-    std::string port;
-    std::string server_path;
-    uint16_t max_size;
+    uint16_t port;
     uint16_t max_clients;
+    std::string ip;
+    std::string server_path;
 
     Config() = default;
 
@@ -21,10 +20,9 @@ public:
     std::string get_addr() const;
 
     friend void from_json(const json& j, Config& config) {
-        j.at("address").get_to(config.address);
+        j.at("ip").get_to(config.ip);
         j.at("port").get_to(config.port);
         j.at("server_path").get_to(config.server_path);
-        j.at("max_size").get_to(config.max_size);
         j.at("max_clients").get_to(config.max_clients);
     }
 };
