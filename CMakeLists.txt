@@ -33,11 +33,13 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(json)
 
 set(INCLUDE_DIRS
-    config/
+    common/addr/
+    common/config/
 )
 
 set(LIB_SOURCES
-    config/config.cpp
+    common/addr/addr.cpp
+    common/config/config.cpp
 )
 
 set(LINK_LIBRARIES
@@ -61,6 +63,21 @@ target_link_libraries(server PRIVATE
     ${LINK_LIBS}
 )
 target_include_directories(server PRIVATE 
+    ${INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# Client
+add_executable(
+    client
+    client/main.cpp
+    client/client.cpp
+)
+target_link_libraries(client PRIVATE
+    core
+    ${LINK_LIBS}
+)
+target_include_directories(client PRIVATE 
     ${INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

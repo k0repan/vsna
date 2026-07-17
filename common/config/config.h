@@ -6,24 +6,19 @@
 #include <stdexcept>
 #include <cstdint>
 #include <nlohmann/json.hpp>
-
-#define STRING_ARG const std::string&
+#include "addr.h"
 
 using json = nlohmann::json;
 
 class Config {
 public:
-    uint8_t max_clients;
-    uint16_t port;
-    std::string ip;
-    std::string server_path;
+    Addr addr;
+    std::string path;
 
     Config()=default;
 
     static Config loadFromFile(STRING_ARG);
-    void setPort(STRING_ARG);
-    void setMaxClients(STRING_ARG);
-    void setIp(STRING_ARG);
-    void setServerPath(STRING_ARG);
+    void setAddr(const Addr&);
+    void setPath(STRING_ARG);
     std::string getAddr() const;
 };

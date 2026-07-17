@@ -1,6 +1,5 @@
 {
     "ip": "0.0.0.0",
     "port": 5555,
-    "server_path": "path/to/",
-    "max_clients": 1
+    "path": "path/to/"
 }
