@@ -9,18 +9,7 @@ if(POLICY CMP0167)
     cmake_policy(SET CMP0167 OLD)
 endif()
 
-# Boost
-set(Boost_USE_STATIC_LIBS ON)
-set(BOOST_ROOT C:/local/boost_1_90_0)
 
-find_package(Boost)
-if(Boost_FOUND)
-    message(STATUS "Boost found: ${Boost_VERSION}")
-    message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
-    message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
-else()
-    message(FATAL_ERROR "Boost not found!")
-endif()
 
 include(FetchContent)
 
@@ -31,6 +20,14 @@ FetchContent_Declare(
   GIT_TAG v3.12.0
 )
 FetchContent_MakeAvailable(json)
+
+# CLI
+FetchContent_Declare(
+  cli11
+  GIT_REPOSITORY https://github.com/CLIUtils/CLI11
+  GIT_TAG v2.6.2
+)
+FetchContent_MakeAvailable(cli11)
 
 set(INCLUDE_DIRS
     common/addr/
@@ -45,27 +42,28 @@ set(LIB_SOURCES
 set(LINK_LIBRARIES
     ${Boost_LIBRARIES}
     nlohmann_json::nlohmann_json
+    CLI11::CLI11
 )
 
 # Core
 add_library(core STATIC ${LIB_SOURCES})
-target_link_libraries(core PRIVATE ${LINK_LIBRARIES})
-target_include_directories(core PRIVATE ${INCLUDE_DIRS})
+target_link_libraries(core PUBLIC ${LINK_LIBRARIES})
+target_include_directories(core PUBLIC ${INCLUDE_DIRS})
 
 # Server
-add_executable(
-    server
-    server/main.cpp
-    server/server.cpp
-)
-target_link_libraries(server PRIVATE
-    core
-    ${LINK_LIBS}
-)
-target_include_directories(server PRIVATE 
-    ${INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
+#add_executable(
+#    server
+#    server/main.cpp
+#    server/server.cpp
+#)
+#target_link_libraries(server PRIVATE
+#    core
+#    ${LINK_LIBS}
+#)
+#target_include_directories(server PRIVATE 
+#    ${INCLUDE_DIRS}
+#    ${CMAKE_CURRENT_SOURCE_DIR}
+#)
 
 # Client
 add_executable(
@@ -75,7 +73,6 @@ add_executable(
 )
 target_link_libraries(client PRIVATE
     core
-    ${LINK_LIBS}
 )
 target_include_directories(client PRIVATE 
     ${INCLUDE_DIRS}

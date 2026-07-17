@@ -1,6 +1,6 @@
 #include "addr.h"
 
-Addr::Addr(uint16_t port, STRING_ARG ip){
+Addr::Addr(STRING_ARG ip, uint16_t port){
     if (port < 0 || port > 65535) {
         throw std::out_of_range("[!] Port out of range (0-65535): " + std::to_string(port));
     }
@@ -8,15 +8,15 @@ Addr::Addr(uint16_t port, STRING_ARG ip){
     setIp(ip);
 }
 
-Addr::Addr(STRING_ARG port, STRING_ARG ip){
-    setPort(port);
+Addr::Addr(STRING_ARG ip, STRING_ARG port){
     setIp(ip);
+    setPort(port);
 }
 
 void Addr::setIp(STRING_ARG ip) {
     std::stringstream ss(ip);
     std::string part;
-    int index{ 0 };
+    uint8_t index{ 0 };
     
     while (std::getline(ss, part, '.') && index < 4) {
         if (part.empty()) {
@@ -33,6 +33,7 @@ void Addr::setIp(STRING_ARG ip) {
         if (num < 0 || num > 255) {
             throw std::out_of_range("[!] IP part out of range (0-255): " + part);
         }
+        index++;
     }
     
     if (index != 4) {
