@@ -1,13 +1,13 @@
 # VSNA
-**Virtualized Storage and Network Access** is education open-source CLI project, realized C++ to exchange data between devices on a _VLAN_.
+**Virtual Storage and Network Access** is open-source CLI project, implemented on C++ to exchange data between devices on a _VLAN_.
 
 # Dependencies
-- `nlohmann/json` - JSON parsing library;
 - `boost` - asio + beast (_websocket_);
 - `CLI11` - command line interface parser.
+- `nlohmann/json` - JSON parsing library;
 
 # To run
-To run project from scratch, you should goto `cpp_server/` and push:
+To run project, you should launch:
 
 **Default build**
 ```bash
@@ -80,3 +80,8 @@ ninja
 |Short, Long name|Description|Default value|
 |---|---|---|
 | `-m`, `--max-clients <count>` | set max clients | 1 |
+
+# Commands
+- `exit` - exit the program;
+- `help` - show help message;
+- `print` - print client config;

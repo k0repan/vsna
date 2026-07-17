@@ -2,7 +2,7 @@
 #include <string>
 #include <sstream>
 
-#define STRING_ARG const std::string&
+using STRING_ARG = const std::string&;
 
 class Addr {
 public:

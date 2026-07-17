@@ -20,12 +20,10 @@ void Client::CLIParse(int argc, char** argv) {
         exit(-1);
     }
 
-    Config _config;
-
     if (!configFile.empty()) {
         if (std::filesystem::exists(configFile)) {
             try {
-                _config = Config::loadFromFile(configFile);
+                this->config = Config::loadFromFile(configFile);
             } catch (const std::exception& e) {
                 std::cerr << e.what() << std::endl;
                 exit(-1);
@@ -35,13 +33,12 @@ void Client::CLIParse(int argc, char** argv) {
             exit(-1);
         }
     } else {
-        _config = Config::makeNew(Addr(ip, port), path);
+        this->config = Config(Addr(ip, port), path);
     }
-
-    this->config = _config;
 }
 
-void Client::runCLI() const{
-    std::cout << "Running CLI..." << std::endl;
+void Client::startCLI() const{
     std::cout << config.toString() << std::endl;
+    Menu menu(this->config);
+    menu.run();
 }

@@ -3,7 +3,7 @@
 int main(int argc, char** argv) {
     Client client;
     client.CLIParse(argc, argv);
-    client.runCLI();
+    client.startCLI();
     
     return 0;
 }

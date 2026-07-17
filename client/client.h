@@ -3,13 +3,16 @@
 #include <string>
 #include <CLI/CLI.hpp>
 #include "config.h"
+#include "menu.h"
 
 class Client {
 private:
     Config config;
+    Menu menu;
         
 public:
-    Client()=default;
+    Client() : config(Config()),
+                menu(Menu(config)) {}
     void CLIParse(int argc, char** argv);
-    void runCLI() const;
+    void startCLI() const;
 };

@@ -20,11 +20,9 @@ Config Config::loadFromFile(STRING_ARG filename) {
     return config;
 }
 
-Config Config::makeNew(const Addr& addr, STRING_ARG _server_path) {
-    Config config;
-    config.setAddr(addr);
-    config.setPath(_server_path);
-    return config;
+Config::Config(const Addr& addr, STRING_ARG _server_path) {
+    setAddr(addr);
+    setPath(_server_path);
 }
 
 void Config::setAddr(const Addr& addr) {
@@ -63,5 +61,7 @@ std::string Config::getAddr() const {
 }
 
 std::string Config::toString() const {
-    return "Addr: " + getAddr() + "\nPath: " + this->path;
+    return std::string("[=] Config:\n") +
+        "ADDR: " + getAddr() + '\n' +
+        "PATH: " + this->path;
 }

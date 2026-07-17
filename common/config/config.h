@@ -8,7 +8,7 @@
 #include <nlohmann/json.hpp>
 #include "addr.h"
 
-#define STRING_ARG const std::string&
+using STRING_ARG = const std::string&;
 
 using json = nlohmann::json;
 
@@ -18,9 +18,9 @@ public:
     std::string path;
 
     Config()=default;
+    Config(const Addr&, STRING_ARG);
 
     static Config loadFromFile(STRING_ARG);
-    static Config makeNew(const Addr&, STRING_ARG);
     void setAddr(const Addr&);
     void setPath(STRING_ARG);
 

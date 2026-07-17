@@ -70,11 +70,13 @@ add_executable(
     client
     client/main.cpp
     client/client.cpp
+    client/menu/menu.cpp
 )
 target_link_libraries(client PRIVATE
     core
 )
 target_include_directories(client PRIVATE 
+    client/menu/
     ${INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
