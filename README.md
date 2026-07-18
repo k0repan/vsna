@@ -14,8 +14,10 @@ First you need to initialize boost via vcpkg, if you don't have it;. This is don
 .\init.boost.bat
 ```
 
-```shell
-./init_boost.sh
+You can see more commands by:
+
+```bash
+.\init_boost.bat --help
 ```
 
 **Default build**
@@ -24,8 +26,4 @@ Then you can build the project:
 
 ```bash
 .\build.bat
-```
-
-```shell
-./build.sh
 ```
