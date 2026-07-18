@@ -27,3 +27,10 @@ Then you can build the project:
 ```bash
 .\build.bat
 ```
+
+If you use Unix system, you can do the same actions via Shell scripts:
+
+```shell
+./init_boost.sh
+./build.sh # See more flags with --help
+```
