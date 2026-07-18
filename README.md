@@ -14,6 +14,9 @@ First you need to initialize boost via vcpkg, if you don't have it;. This is don
 .\init.boost.bat
 ```
 
+```shell
+./ini
+```
 You can see more commands by:
 
 ```bash
