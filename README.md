@@ -25,7 +25,7 @@ You can see more commands by:
 Then you can build the project:
 
 ```bash
-.\build.bat
+.\build_bat
 ```
 
 If you use Unix system, you can do the same actions via Shell scripts:

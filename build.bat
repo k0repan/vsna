@@ -12,7 +12,7 @@ if not exist "out" (
 )
 
 cmake -B out -S . ^
-    -DCMAKE_TOOLCHAIN_FILE=vcpkg\scripts\buildsystems\vcpkg.cmake ^
+    -DCMAKE_TOOLCHAIN_FILE=%ROOT%\vcpkg\scripts\buildsystems\vcpkg.cmake ^
     -DVCPKG_TARGET_TRIPLET=%TRIPLET% ^
     -DCMAKE_BUILD_TYPE=%BUILD_TYPE%
 
