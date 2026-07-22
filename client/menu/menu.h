@@ -13,70 +13,98 @@ using STRING_ARG = const std::string&;
 
 class MenuItem{
 public:
-    static constexpr const char* name=nullptr;
     virtual ~MenuItem()=default;
     virtual void handle(const ARG_VECTOR&)=0;
+    virtual const char* getName() const = 0;
+    virtual const char* getDescription() const = 0;
+    virtual const char* getUsage() const { return ""; }
 };
 
 class ConnectCommand : public MenuItem {
-public:
     const Config& config;
-    static constexpr const char* name { "connect" };
+public:
     ConnectCommand(const Config& config) : config(config) {}
     void handle(const ARG_VECTOR&) override;
+    const char* getName() const override { return "connect"; }
+    const char* getDescription() const override { return "Connect to the server"; }
+    const char* getUsage() const override { return "<ip:port>"; }
 };
 
 class ShowPathCommand : public MenuItem {
-public:
     const Config& config;
-    static constexpr const char* name { "path" };
+public:
     ShowPathCommand(const Config& config) : config(config) {}
     void handle(const ARG_VECTOR&) override;
+    const char* getName() const override { return "path"; }
+    const char* getDescription() const override { return "Show the server path"; }
+    const char* getUsage() const override { return "[name]"; }
+};
+
+class MyPathCommand : public MenuItem {
+    const Config& config;
+public:
+    MyPathCommand(const Config& config) : config(config) {}
+    void handle(const ARG_VECTOR&) override;
+    const char* getName() const override { return "mypath"; }
+    const char* getDescription() const override { return "Show the client path"; }
+    const char* getUsage() const override { return "[name]"; }
 };
 
 class SendFilesCommand : public MenuItem {
-public:
     const Config& config;
-    static constexpr const char* name { "send" };
+public:
     SendFilesCommand(const Config& config) : config(config) {}
     void handle(const ARG_VECTOR&) override;
+    const char* getName() const override { return "send"; }
+    const char* getDescription() const override { return "Send files to the server"; }
+    const char* getUsage() const override { return "<file1> [file2] ..."; }
 };
 
 class DownloadCommand : public MenuItem {
-public:
     const Config& config;
-    static constexpr const char* name { "download" };
+public:
     DownloadCommand(const Config& config) : config(config) {}
     void handle(const ARG_VECTOR&) override;
+    const char* getName() const override { return "download"; }
+    const char* getDescription() const override { return "Download files from the server"; }
+    const char* getUsage() const override { return "<file1 | path1> [file2] ..."; }
 };
 
 class ExitCommand : public MenuItem {
-public:
     bool& isExit;
-    static constexpr const char* name { "exit" };
+public:
     ExitCommand(bool& exitFlag) : isExit(exitFlag) {}
     void handle(const ARG_VECTOR&) override;
+    const char* getName() const override { return "exit"; }
+    const char* getDescription() const override { return "Exit the program"; }
 };
 
 class PrintCommand : public MenuItem {
-public:
     const Config& config;
-    static constexpr const char* name { "print" };
+public:
     PrintCommand(const Config& config) : config(config) {}
     void handle(const ARG_VECTOR&) override;
+    const char* getName() const override { return "print"; }
+    const char* getDescription() const override { return "Print the current path"; }
 };
 
+class HelpCommand : public MenuItem {
+    std::unordered_map<std::string, std::unique_ptr<MenuItem>>& commands;
+public:
+    HelpCommand(std::unordered_map<std::string, std::unique_ptr<MenuItem>>& commands)
+        : commands(commands) {}
+    void handle(const ARG_VECTOR&) override;
+    const char* getName() const override { return "help"; }
+    const char* getDescription() const override { return "Show this help message"; }
+};
 
 class Menu {
-private:
-    const Config& config{ Config(Addr("0.0.0.0", "8080"), ".") };
+    Config config;
     bool isExit{ false };
     std::unordered_map<std::string, std::unique_ptr<MenuItem>> commands;
 public:
     Menu()=default;
     Menu(const Config& config) : config(config) { this->buildCommands(); }
-    ~Menu()=default;
-    
     void buildCommands();
     void run();
 };

@@ -1,12 +1,17 @@
 #include "menu.h"
 
 void Menu::buildCommands() {
-    commands[ExitCommand::name] = std::make_unique<ExitCommand>(isExit);
-    commands[PrintCommand::name] = std::make_unique<PrintCommand>(config);
-    commands[ConnectCommand::name] = std::make_unique<ConnectCommand>(config);
-    commands[ShowPathCommand::name] = std::make_unique<ShowPathCommand>(config);
-    commands[DownloadCommand::name] = std::make_unique<DownloadCommand>(config);
-    commands[SendFilesCommand::name] = std::make_unique<SendFilesCommand>(config);
+    auto add = [&](auto cmd) {
+        commands[cmd->getName()] = std::move(cmd);
+    };
+    add(std::make_unique<HelpCommand>(commands));
+    add(std::make_unique<ExitCommand>(isExit));
+    add(std::make_unique<PrintCommand>(config));
+    add(std::make_unique<MyPathCommand>(config));
+    add(std::make_unique<ConnectCommand>(config));
+    add(std::make_unique<ShowPathCommand>(config));
+    add(std::make_unique<DownloadCommand>(config));
+    add(std::make_unique<SendFilesCommand>(config));
 }
 
 void Menu::run() {
@@ -15,12 +20,14 @@ void Menu::run() {
         std::cout << "> ";
         std::getline(std::cin, input);
         ARG_VECTOR args = splitArgs(input);
+
         if (args.empty()) continue;
+
         auto it = commands.find(args[0]);
-        if (it != commands.end()) {
-            it->second->handle(args);
-        } else {
+        if (it == commands.end()) {
             std::cout << "Unknown command: " << args[0] << std::endl;
+        } else {
+            it->second->handle(ARG_VECTOR(args.begin() + 1, args.end()));
         }
         if (isExit) break;
     }
@@ -36,7 +43,7 @@ ARG_VECTOR splitArgs(STRING_ARG input) {
     return args;
 }
 
-std::string toLowerCase(STRING_ARG str){
+std::string toLowerCase(STRING_ARG str) {
     std::string result = str;
     std::transform(result.begin(), result.end(), result.begin(), ::tolower);
     return result;
@@ -52,17 +59,40 @@ void PrintCommand::handle(const ARG_VECTOR& args) {
 }
 
 void ConnectCommand::handle(const ARG_VECTOR& args) {
-    
+    if (args.empty()) {
+        std::cout << "Usage: " << getUsage() << std::endl;
+        return;
+    }
 }
 
 void ShowPathCommand::handle(const ARG_VECTOR& args) {
-    
+
+}
+
+void MyPathCommand::handle(const ARG_VECTOR& args) {
+
 }
 
 void SendFilesCommand::handle(const ARG_VECTOR& args) {
-    
+    if (args.empty()) {
+        std::cout << "Usage: " << getUsage() << std::endl;
+        return;
+    }
 }
 
 void DownloadCommand::handle(const ARG_VECTOR& args) {
-    
+    if (args.empty()) {
+        std::cout << "Usage: " << getUsage() << std::endl;
+        return;
+    }
+}
+
+void HelpCommand::handle(const ARG_VECTOR& args) {
+    std::cout << "[=] Available commands:" << std::endl;
+    for (const auto& [name, cmd] : commands) {
+        auto usage = cmd->getUsage();
+        std::cout << "\t" << name;
+        if (usage[0] != '\0') std::cout << " " << usage;
+        std::cout << " - " << cmd->getDescription() << std::endl;
+    }
 }

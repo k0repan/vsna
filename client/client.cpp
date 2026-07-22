@@ -17,6 +17,7 @@ void Client::CLIParse(int argc, char** argv) {
         app.parse(argc, argv);
     } catch (const CLI::ParseError& e) {
         app.exit(e);
+        std::cerr << e.what() << std::endl;
         exit(-1);
     }
 
