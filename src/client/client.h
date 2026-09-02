@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <thread>
+#include <memory>
 
 #include "config.h"
 #include "session.h"
@@ -32,6 +34,8 @@ class Client {
 	void disconnect();
 
   private:
-    Config _config;
+	Config _config;
 	boost::asio::io_context _io_context;
+	std::shared_ptr<ClientSession> _session;
+	std::thread _io_thread;
 };

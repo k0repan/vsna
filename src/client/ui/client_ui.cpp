@@ -63,7 +63,7 @@ void ClientUI::run(int argc, char **argv)
 	_commandManager.initCommands();
 
 	//_tuiApp.run();
-	
+
 	_client.print();
 
 	std::string input;

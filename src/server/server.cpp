@@ -13,7 +13,6 @@ void Server::setup_acceptor()
 		fail(ec, "open");
 		return;
 	}
-	std::cout << "opened" << std::endl;
 
 	// Allow address reuse
 	_acceptor.set_option(asio::socket_base::reuse_address(true), ec);
@@ -22,7 +21,6 @@ void Server::setup_acceptor()
 		fail(ec, "set_option");
 		return;
 	}
-	std::cout << "set_option" << std::endl;
 
 	// Bind to the server address
 	_acceptor.bind(endpoint, ec);
@@ -31,7 +29,6 @@ void Server::setup_acceptor()
 		fail(ec, "bind");
 		return;
 	}
-	std::cout << "binded" << std::endl;
 
 	// Start listening for connections
 	_acceptor.listen(asio::socket_base::max_listen_connections, ec);
@@ -40,12 +37,11 @@ void Server::setup_acceptor()
 		fail(ec, "listen");
 		return;
 	}
-	std::cout << "listening" << std::endl;
 }
 
 void Server::run()
 {
-    setup_acceptor();
+	setup_acceptor();
 	do_accept();
 	std::cout << "Server is running on " << _config.getAddr().toString() << std::endl;
 
@@ -54,18 +50,14 @@ void Server::run()
 	for (size_t i = 0; i < max_threads - 1; ++i)
 	{
 		_threads.emplace_back([this] { _io_context.run(); });
-		std::cout << "Thread " << i + 1 << " started." << std::endl;
 	}
 
-	std::cout << "PID: " << getpid() << '\n';
 	std::cout << "Main thread started." << std::endl;
 	_io_context.run();
 }
 
 void Server::do_accept()
 {
-	std::cout << "Waiting for a TCP connection...\n";
-
 	// The new connection gets its own strand
 	_acceptor.async_accept(asio::make_strand(_io_context),
 	                       beast::bind_front_handler(&Server::on_accept, shared_from_this()));

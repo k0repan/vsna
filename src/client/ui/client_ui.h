@@ -15,7 +15,6 @@
 class ClientUI {
 	Client _client;
 	CommandManager _commandManager;
-	
 
   public:
 	ClientUI() : _commandManager(_client)
