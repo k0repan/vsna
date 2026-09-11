@@ -12,8 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "invoker.h"
-
 namespace fs = std::filesystem;
 using namespace cpptui;
 

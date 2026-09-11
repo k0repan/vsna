@@ -1,5 +1,5 @@
-#include "menu.h"
-#include "command_manager.h"
+#include "command.h"
+#include "com_manager.h"
 
 bool HelpCommand::handle(ARG_VECTOR args)
 {

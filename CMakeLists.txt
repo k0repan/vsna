@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+add_compile_options(/bigobj) # to avoid C1128 linker errors with large obj
 if(POLICY CMP0167)
     cmake_policy(SET CMP0167 OLD)
 endif()
@@ -31,15 +32,15 @@ set(UTILS_SOURCES
 )
 set(SERVER_SOURCES
     ${SERVER_DIR}/server.cpp
-    ${SERVER_DIR}/server_cli.cpp
-    ${SERVER_DIR}/session.cpp
+    ${SERVER_DIR}/cli/server_cli.cpp
+    ${SERVER_DIR}/session/session.cpp
 )
 set(CLIENT_SOURCES
     ${CLIENT_DIR}/client.cpp
     ${CLIENT_DIR}/session/session.cpp
     ${CLIENT_DIR}/ui/client_ui.cpp
-    ${CLIENT_DIR}/menu/menu.cpp
-    ${CLIENT_DIR}/com_manager/command_manager.cpp
+    ${CLIENT_DIR}/commands/command/command.cpp
+    ${CLIENT_DIR}/commands/manager/com_manager.cpp
 )
 
 # Main executable : src/main.cpp picks server/client via BUILD_* defines
@@ -88,7 +89,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE utils)
 if (SERVER)
     add_library(server STATIC ${SERVER_SOURCES})
     target_link_libraries(server PRIVATE utils)
-    target_include_directories(server PUBLIC ${SERVER_DIR})
+    target_include_directories(server PUBLIC
+        ${SERVER_DIR}
+        ${SERVER_DIR}/cli
+        ${SERVER_DIR}/session)
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE BUILD_SERVER=1)
     target_link_libraries(${PROJECT_NAME} PRIVATE server)
@@ -99,8 +103,8 @@ elseif (CLIENT)
     target_include_directories(client PUBLIC
         ${CLIENT_DIR}
         ${CLIENT_DIR}/ui
-        ${CLIENT_DIR}/menu
-        ${CLIENT_DIR}/com_manager
+        ${CLIENT_DIR}/commands/command
+        ${CLIENT_DIR}/commands/manager
         ${CLIENT_DIR}/session)
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE BUILD_CLIENT=1)

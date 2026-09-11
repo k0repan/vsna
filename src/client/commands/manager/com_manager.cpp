@@ -1,4 +1,4 @@
-#include "command_manager.h"
+#include "com_manager.h"
 
 template <typename T, typename... Args>
 void CommandManager::addCommand(STRING_ARG name, STRING_ARG desc, STRING_ARG usage, Args&&...args)

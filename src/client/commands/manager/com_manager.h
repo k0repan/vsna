@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "types.h"
-#include "menu.h"
+#include "command.h"
 
 class CommandManager {
   public:
@@ -18,6 +18,6 @@ class CommandManager {
 	template <typename T, typename... Args>
 	void addCommand(STRING_ARG name, STRING_ARG desc, STRING_ARG usage, Args&&...args);
 
-	std::unordered_map<std::string, std::unique_ptr<MenuItem>> _commands;
+	std::unordered_map<std::string, std::unique_ptr<Command>> _commands;
 	Client& _client;
 };

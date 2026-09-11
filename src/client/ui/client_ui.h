@@ -7,9 +7,9 @@
 #include <unordered_map>
 
 #include "client.h"
-#include "command_manager.h"
+#include "com_manager.h"
 #include "config.h"
-#include "menu.h"
+#include "command.h"
 #include "helper.h"
 
 class ClientUI {
