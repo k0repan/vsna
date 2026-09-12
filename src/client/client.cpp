@@ -1,29 +1,28 @@
 #include "client.h"
-#include "helper.h"
 
 void Client::print() const
 {
-	std::cout << _config.toString() << std::endl;
+	TUI::print(_config.toString());
 }
 
 void Client::showPath(ARG_VECTOR args) const
 {
-	std::cout << "Server path: " << _config.getPath() << std::endl;
+	TUI::print("Server path: " + _config.getPath());
 }
 
 void Client::myPath(ARG_VECTOR args) const
 {
-	std::cout << "Current path: " << _config.getPath() << std::endl;
+	TUI::print("Current path: " + _config.getPath());
 }
 
 void Client::sendFiles(ARG_VECTOR args)
 {
-	std::cout << "Sending files..." << std::endl;
+	TUI::print("Sending files...");
 }
 
 void Client::download(ARG_VECTOR args)
 {
-	std::cout << "Downloading..." << std::endl;
+	TUI::print("Downloading...");
 }
 
 void Client::connect(ARG_VECTOR args)
@@ -37,13 +36,13 @@ void Client::connect(ARG_VECTOR args)
 	{
 		if (args.size() != 1)
 		{
-			std::cerr << "Usage: connect [ip:port]" << std::endl;
+			TUI::print_err("Usage: connect [ip:port]");
 			return;
 		}
 		auto tempVec = split(args[0], ":");
 		if (tempVec.size() != 2)
 		{
-			std::cerr << "Usage: connect [ip:port]" << std::endl;
+			TUI::print_err("Usage: connect [ip:port]");
 			return;
 		}
 		addr = Addr(tempVec[0], tempVec[1]);
@@ -59,7 +58,7 @@ void Client::connect(ARG_VECTOR args)
 	// Handle console input in main thread
 	// TODO: Can we use CLI11 here?
 	std::string line;
-	std::cout << "Connected. Type messages to send (type 'quit' to disconnect):\n";
+	TUI::print("Connected. Type messages to send (type 'quit' to disconnect):\n");
 	while (std::getline(std::cin, line))
 	{
 		if (line == "quit")
@@ -78,15 +77,15 @@ void Client::connect(ARG_VECTOR args)
 
 void Client::sendMsg(ARG_VECTOR args)
 {
-	std::cout << "Sending message..." << std::endl;
+	TUI::print("Sending message...");
 	std::string msg = join(args, " ");
-	std::cout << "Message: " << msg << std::endl;
-	std::cout << "Message length: " << msg.length() << std::endl;
+	TUI::print("Message: " + msg);
+	TUI::print("Message length: " + std::to_string(msg.length()));
 }
 
 void Client::disconnect()
 {
-	std::cout << "Disconnecting..." << std::endl;
+    TUI::print("Disconnecting...");
 	_io_context.stop();
 
 	// Wait for io thread to finish

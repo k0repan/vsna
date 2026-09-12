@@ -1,4 +1,4 @@
-#include "session.h"
+#include "server_session.h"
 
 void ServerSession::run()
 {
@@ -41,7 +41,7 @@ void ServerSession::on_read(beast::error_code ec, std::size_t bytes_transferred)
 	if (ec)
 		return fail(ec, "read");
 
-	std::cout << "Received: " << beast::make_printable(_buffer.data()) << '\n';
+	TUI::print("Received: " + beast::buffers_to_string(_buffer.data()));
 
 	// Echo the message back (TODO: Implement actual message handling logic)
 	_ws.text(_ws.got_text());

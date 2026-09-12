@@ -1,14 +1,14 @@
 #pragma once
 #include <boost/asio.hpp>
-#include <iostream>
 #include <string>
 #include <vector>
 #include <thread>
 #include <memory>
 
 #include "config.h"
-#include "session.h"
+#include "client_session.h"
 #include "helper.h"
+#include "tui_output.h"
 
 class Client {
   public:

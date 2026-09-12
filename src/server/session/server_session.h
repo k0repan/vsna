@@ -1,3 +1,4 @@
+#pragma once
 #include "pch.h"
 
 class ServerSession : public std::enable_shared_from_this<ServerSession> {

@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -7,6 +6,7 @@
 #include "client.h"
 #include "config.h"
 #include "types.h"
+#include "tui_output.h"
 
 struct CommandInfo
 {
@@ -100,7 +100,7 @@ class ExitCommand : public Command {
 	{}
 	bool handle(ARG_VECTOR args) override
 	{
-		std::cout << "[~] Program was exit." << std::endl;
+		TUI::print("[~] Program was exit.");
 		return true;
 	}
 };

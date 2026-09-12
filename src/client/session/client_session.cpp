@@ -1,4 +1,4 @@
-#include "session.h"
+#include "client_session.h"
 
 void ClientSession::run(char const *host, char const *port)
 {
@@ -56,10 +56,10 @@ void ClientSession::on_handshake(beast::error_code ec)
 	// beast::bind_front_handler(&ClientSession::on_write, shared_from_this()));
 	// _ws.async_read(_buffer, beast::bind_front_handler(&ClientSession::on_read,
 	// shared_from_this()));
-	std::cout << "Connected to " << _host << ":" << _port << std::endl;
+	TUI::print("Connected to " + _host + ":" + _port);
 	do_read();
 	do_write();
-	std::cout << "Client session started." << std::endl;
+	TUI::print("Client session started.");
 }
 
 void ClientSession::do_read()
@@ -70,14 +70,13 @@ void ClientSession::do_read()
 	                                                         size_t bytes_transferred) {
 		    if (ec)
 		    {
-			    std::cout << "Read error: " << beast::buffers_to_string(self->_buffer.data())
-			              << '\n';
+			    TUI::print_err("Read error: " + beast::buffers_to_string(self->_buffer.data()));
 			    self->_ws.async_close(
 			        websocket::close_code::normal,
 			        beast::bind_front_handler(&ClientSession::on_close, self->shared_from_this()));
 			    return;
 		    }
-		    std::cout << "Received: " << beast::buffers_to_string(self->_buffer.data()) << '\n';
+		    TUI::print("Received: " + beast::buffers_to_string(self->_buffer.data()));
 		    self->_buffer.consume(self->_buffer.size());
 
 		    self->do_read();
@@ -120,14 +119,14 @@ void ClientSession::do_write()
 	        [self = shared_from_this()](beast::error_code ec, size_t bytes_transferred) {
 		        if (ec)
 		        {
-			        std::cout << "Write error: " << ec.message() << '\n';
+			        TUI::print_err("Write error: " + ec.message());
 			        self->_ws.async_close(websocket::close_code::normal,
 			                              beast::bind_front_handler(&ClientSession::on_close,
 			                                                        self->shared_from_this()));
 			        return;
 		        }
 
-		        std::cout << "Bytes written: " << bytes_transferred << std::endl;
+		        TUI::print("Bytes written: " + std::to_string(bytes_transferred));
 		        self->_current_msg.clear();
 		        self->do_write();
 	        }));
@@ -147,7 +146,7 @@ void ClientSession::on_read(beast::error_code ec, std::size_t bytes_transferred)
 	if (ec)
 		return fail(ec, "read");
 
-	std::cout << "Received: " << beast::make_printable(_buffer.data()) << '\n';
+	TUI::print("Received: " + beast::buffers_to_string(_buffer.data()));
 
 	// Echo the message back (TODO: Implement actual message handling logic)
 	_ws.text(_ws.got_text());
@@ -176,5 +175,5 @@ void ClientSession::on_close(beast::error_code ec)
 		return fail(ec, "close");
 
 	// TODO: Add a normal close
-	std::cout << beast::make_printable(_buffer.data()) << std::endl;
+	TUI::print("Closed: " + beast::buffers_to_string(_buffer.data()));
 }

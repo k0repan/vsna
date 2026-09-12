@@ -1,3 +1,4 @@
+#pragma once
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <boost/beast/core.hpp>
@@ -8,6 +9,7 @@
 #include <thread>
 
 #include "helper.h"
+#include "tui_output.h"
 
 using namespace boost::placeholders;
 using tcp = boost::asio::ip::tcp;
@@ -24,5 +26,5 @@ inline void fail(beast::error_code ec, char const *op)
 		return;
 	}
 
-	std::cerr << op << ": " << ec.message() << "\n";
+	TUI::print(std::string(op) + ": " + ec.message());
 }

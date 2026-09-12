@@ -9,6 +9,7 @@
 
 #include <format>
 #include <source_location>
+#include "tui_output.h"
 
 namespace logger {
 enum class Level { DEBUG, INFO, WARN, ERROR };
@@ -36,8 +37,9 @@ template <Level l, class... Args> struct print<l, const char *, Args...>
 		{
 			levelString = "ERROR";
 		}
-		std::cout << std::format("[ {} ] {} : line {}  {}", levelString, loc.file_name(), loc.line(),
-		             std::vformat(msg, std::make_format_args(args...)));
+		// TODO: add log file write
+		TUI::print(std::format("[ {} ] {} : line {}  {}", levelString, loc.file_name(), loc.line(),
+		             std::vformat(msg, std::make_format_args(args...))));
 	}
 };
 

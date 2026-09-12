@@ -1,29 +1,20 @@
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
-#include <iostream>
+#include "tui.h"
+#include "tui_output.h"
 
-#if BUILD_SERVER
 #include "server_cli.h"
-#endif
+#include "client_cli.h"
 
-#if BUILD_CLIENT
-#include "client_ui.h"
-#endif
 
 int main(int argc, char *argv[])
 {
-#if BUILD_SERVER
-	std::cout << "Built as a server." << std::endl;
-	ServerCLI serverCLI;
-	serverCLI.run(argc, argv);
-#endif
-
-#if BUILD_CLIENT
-	std::cout << "Built as a client." << std::endl;
-	ClientUI clientUI;
-	clientUI.run(argc, argv);
-#endif
+    TuiApp tuiApp;
+    tuiApp.run(argc, argv);
+    
+	//ServerCLI serverCLI;
+	//serverCLI.run(argc, argv);
 
 	return EXIT_SUCCESS;
 }

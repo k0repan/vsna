@@ -12,6 +12,9 @@
 #include <string>
 #include <vector>
 
+#include "client_cli.h"
+#include "helper.h"
+
 namespace fs = std::filesystem;
 using namespace cpptui;
 
@@ -30,7 +33,6 @@ struct OutputLine
 	LineKind kind;
 };
 
-std::vector<std::string> split_whitespace(const std::string& s);
 std::string human_size(uintmax_t bytes);
 
 class HistoryInput : public Input {
@@ -48,9 +50,10 @@ class HistoryInput : public Input {
 	std::string draft_;
 };
 
-class ChatApp {
+class TuiApp {
   public:
-	void run();
+	void run(int argc, char **argv);
+	TuiApp() : clientCLI_() {}
 
   private:
 	void build_ui();
@@ -59,8 +62,7 @@ class ChatApp {
 	void apply_theme(int idx);
 	void submit();
 
-	void register_commands();
-	bool execute_command(const std::string& text);
+	bool execute_command(const std::string& input);
 
 	static void scan_dir_into(TreeNode& node, const fs::path& dir);
 	void open_list_dialog(const std::string& path_str);
@@ -70,6 +72,7 @@ class ChatApp {
 	void append_system(const std::string& text);
 	void append_result(const std::string& text);
 	void add_line(LineKind kind, const std::string& text);
+	void drain_output();
 	void refresh_output();
 
 	App app_;
@@ -84,8 +87,10 @@ class ChatApp {
 	std::shared_ptr<RadioSet> theme_list_;
 	std::shared_ptr<Checkbox> settings_checkbox_;
 	TimerId focus_fix_timer_{ -1 };
+	TimerId drain_timer_{ -1 };
 	std::vector<OutputLine> lines_;
-	Invoker invoker_;
 	int auto_message_index_ = 0;
 	int auto_message_number_ = 0;
+
+	ClientCLI clientCLI_;
 };

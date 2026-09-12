@@ -10,19 +10,6 @@
 
 namespace {
 
-const char *kAutoMessages[] = {
-	"Heartbeat received - all systems operational.",
-	"Checkpoint saved successfully.",
-	"Network latency nominal (12 ms).",
-	"Background job finished without errors.",
-	"Cache refreshed (128 entries).",
-	"Telemetry batch uploaded to the server.",
-	"Disk usage at 42 percent - no action required.",
-	"Security scan completed: no threats found.",
-};
-constexpr int kAutoMessageCount
-    = static_cast<int>(sizeof(kAutoMessages) / sizeof(kAutoMessages[0]));
-
 struct ThemeOption
 {
 	const char *name;
@@ -41,16 +28,12 @@ constexpr int kThemeOptionCount
 
 const char *kHelloBanner =
     R"(
-+------------------------------------------------+
-| ___      ___ ________  ________   ________     |
-||\  \    /  /|\   ____\|\   ___  \|\   __  \    |
-|\ \  \  /  / | \  \___|\ \  \\ \  \ \  \|\  \   |
-| \ \  \/  / / \ \_____  \ \  \\ \  \ \   __  \  |
-|  \ \    / /   \|____|\  \ \  \\ \  \ \  \ \  \ |
-|   \ \__/ /      ____\_\  \ \__\\ \__\ \__\ \__\|
-|    \|__|/      |\_________\|__| \|__|\|__|\|__||
-|                \|_________|                    |
-+------------------------------------------------+)";
+__      _______ _   _          
+\ \    / / ____| \ | |   /\    
+ \ \  / / (___ |  \| |  /  \   
+  \ \/ / \___ \| . ` | / /\ \  
+   \  /  ____) | |\  |/ ____ \ 
+    \/  |_____/|_| \_/_/    \_\)";
 
 } // namespace
 
@@ -66,24 +49,6 @@ std::string timestamp()
 	char buf[16];
 	std::strftime(buf, sizeof(buf), "%H:%M:%S", &tm_buf);
 	return buf;
-}
-
-std::vector<std::string> split_whitespace(const std::string& s)
-{
-	std::vector<std::string> out;
-	size_t i = 0;
-	while (i < s.size())
-	{
-		while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i])))
-			i++;
-		size_t j = i;
-		while (j < s.size() && !std::isspace(static_cast<unsigned char>(s[j])))
-			j++;
-		if (j > i)
-			out.push_back(s.substr(i, j - i));
-		i = j;
-	}
-	return out;
 }
 
 std::string human_size(uintmax_t bytes)
@@ -166,31 +131,31 @@ void HistoryInput::browse(int dir)
 	set_value(index_ == end ? draft_ : entries_[index_]);
 }
 
-// ChatApp
+// TuiApp
 
-void ChatApp::run()
+void TuiApp::run(int argc, char **argv)
 {
-	register_commands();
+    clientCLI_.run(argc, argv);
 	build_ui();
 	append_system("Welcome! Type a message below and press Enter to send it.");
 	append_system("Automatic status messages arrive every 3 seconds (toggle in Settings).");
 	append_system("Type 'help' to list available commands.");
 	append_system("Press Ctrl+C or click Quit to exit.");
-	app_.add_timer(3000, [this] { on_auto_message(); });
 	focus_fix_timer_ = app_.add_timer(1, [this] {
 		app_.remove_timer(focus_fix_timer_);
 		input_->set_focus(true);
 	});
+	drain_timer_ = app_.add_timer(50, [this] { drain_output(); });
 	app_.run(root_);
 }
 
-void ChatApp::build_ui()
+void TuiApp::build_ui()
 {
 	Theme::set_theme(Theme::Dark());
 	root_ = std::make_shared<Vertical>();
 	tabs_ = std::make_shared<Tabs>();
 
-	tabs_->add_action_button(std::make_shared<Button>("Quit", [] { App::quit(); }));
+	tabs_->add_tab("Quit", std::make_shared<Button>("Quit", [] { App::quit(); }));
 
 	tabs_->add_tab("Output", build_output_page());
 	tabs_->add_tab("Settings", build_settings_page());
@@ -202,7 +167,7 @@ void ChatApp::build_ui()
 	app_.register_key(27, [this] { close_list_dialog(); }, false, false, false, false);
 }
 
-std::shared_ptr<Vertical> ChatApp::build_output_page()
+std::shared_ptr<Vertical> TuiApp::build_output_page()
 {
 	auto page = std::make_shared<Vertical>();
 
@@ -235,7 +200,7 @@ std::shared_ptr<Vertical> ChatApp::build_output_page()
 	return page;
 }
 
-std::shared_ptr<Vertical> ChatApp::build_settings_page()
+std::shared_ptr<Vertical> TuiApp::build_settings_page()
 {
 	auto page = std::make_shared<Vertical>();
 
@@ -258,7 +223,7 @@ std::shared_ptr<Vertical> ChatApp::build_settings_page()
 	return page;
 }
 
-void ChatApp::apply_theme(int idx)
+void TuiApp::apply_theme(int idx)
 {
 	if (idx < 0 || idx >= kThemeOptionCount)
 		return;
@@ -266,7 +231,7 @@ void ChatApp::apply_theme(int idx)
 	refresh_output();
 }
 
-void ChatApp::submit()
+void TuiApp::submit()
 {
 	const std::string text = input_->take_text();
 	if (text.empty())
@@ -279,74 +244,22 @@ void ChatApp::submit()
 	add_line(LineKind::kUser, "[" + timestamp() + "] You: " + text);
 }
 
-void ChatApp::register_commands()
+bool TuiApp::execute_command(const std::string& input)
 {
-	invoker_.register_command("exit", "exit", "Close the application.",
-	                          [this](const std::vector<std::string>&) {
-		                          append_system("Goodbye!");
-		                          App::quit();
-	                          });
-
-	invoker_.register_command(
-	    "hello", "hello", "Print an ASCII banner.",
-	    [this](const std::vector<std::string>&) { add_line(LineKind::kResult, kHelloBanner); });
-
-	invoker_.register_command(
-	    "calculate", "calculate <number> <number>", "Print the sum of two numbers.",
-	    [this](const std::vector<std::string>& args) {
-		    if (args.size() != 2)
-		    {
-			    add_line(LineKind::kError, "Usage: calculate <number> <number>");
-			    return;
-		    }
-		    try
-		    {
-			    double sum = std::stod(args[0]) + std::stod(args[1]);
-			    std::ostringstream oss;
-			    oss << sum;
-			    append_result(oss.str());
-		    }
-		    catch (...)
-		    {
-			    add_line(LineKind::kError, "Error: arguments must be numbers.");
-		    }
-	    });
-
-	invoker_.register_command("list", "list [directory]", "Open a directory browser dialog.",
-	                          [this](const std::vector<std::string>& args) {
-		                          if (args.size() > 1)
-		                          {
-			                          add_line(LineKind::kError, "Usage: list [directory]");
-			                          return;
-		                          }
-		                          open_list_dialog(args.empty() ? "." : args[0]);
-	                          });
-
-	invoker_.register_command(
-	    "help", "help", "List available commands.", [this](const std::vector<std::string>&) {
-		    auto& cmds = invoker_.commands();
-		    std::vector<const std::pair<const std::string, Command> *> sorted;
-		    for (const auto& entry : cmds)
-			    sorted.push_back(&entry);
-		    std::sort(sorted.begin(), sorted.end(),
-		              [](const auto *a, const auto *b) { return a->first < b->first; });
-		    std::string out = "Available commands:";
-		    for (const auto *entry : sorted)
-			    out += "\n  " + entry->second.usage + " - " + entry->second.description;
-		    append_result(out);
-	    });
+	return clientCLI_.execute(input);
 }
 
-bool ChatApp::execute_command(const std::string& text)
+void TuiApp::drain_output()
 {
-	std::vector<std::string> tokens = split_whitespace(text);
-	if (tokens.empty())
-		return true;
-
-	return invoker_.execute(tokens[0], { tokens.begin() + 1, tokens.end() });
+    queue_str queue = TUIOutputStream::instance().drain();
+	while (!queue.empty())
+	{
+		add_line(LineKind::kResult, queue.front());
+		queue.pop();
+	}
 }
 
-void ChatApp::scan_dir_into(TreeNode& node, const fs::path& dir)
+void TuiApp::scan_dir_into(TreeNode& node, const fs::path& dir)
 {
 	std::error_code ec;
 	std::vector<fs::directory_entry> dirs, files;
@@ -385,7 +298,7 @@ void ChatApp::scan_dir_into(TreeNode& node, const fs::path& dir)
 	node.children = std::move(kids);
 }
 
-void ChatApp::open_list_dialog(const std::string& path_str)
+void TuiApp::open_list_dialog(const std::string& path_str)
 {
 	std::error_code ec;
 	fs::path target = fs::absolute(fs::path(path_str), ec);
@@ -458,7 +371,7 @@ void ChatApp::open_list_dialog(const std::string& path_str)
 	app_.open_dialog(list_dialog_);
 }
 
-void ChatApp::close_list_dialog()
+void TuiApp::close_list_dialog()
 {
 	if (list_dialog_ && list_dialog_->is_open)
 	{
@@ -467,33 +380,23 @@ void ChatApp::close_list_dialog()
 	}
 }
 
-void ChatApp::on_auto_message()
-{
-	if (!settings_checkbox_->is_checked())
-		return;
-	auto_message_index_ = (auto_message_index_ + 1) % kAutoMessageCount;
-	int n = ++auto_message_number_;
-	add_line(LineKind::kSystem, "[" + timestamp() + "] System: auto message #" + std::to_string(n)
-	                                + ": " + kAutoMessages[auto_message_index_]);
-}
-
-void ChatApp::append_system(const std::string& text)
+void TuiApp::append_system(const std::string& text)
 {
 	add_line(LineKind::kSystem, "[" + timestamp() + "] System: " + text);
 }
 
-void ChatApp::append_result(const std::string& text)
+void TuiApp::append_result(const std::string& text)
 {
 	add_line(LineKind::kResult, "[" + timestamp() + "] Result: " + text);
 }
 
-void ChatApp::add_line(LineKind kind, const std::string& text)
+void TuiApp::add_line(LineKind kind, const std::string& text)
 {
 	lines_.push_back({ text, kind });
 	refresh_output();
 }
 
-void ChatApp::refresh_output()
+void TuiApp::refresh_output()
 {
 	const Theme& theme = Theme::current();
 	StyledText styled;
@@ -522,11 +425,4 @@ void ChatApp::refresh_output()
 	int view_height = output_scroll_->height;
 	int max_scroll = total_rows - view_height;
 	output_scroll_->scroll_offset = max_scroll > 0 ? max_scroll : 0;
-}
-
-int main()
-{
-	ChatApp app;
-	app.run();
-	return 0;
 }

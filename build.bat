@@ -10,22 +10,18 @@ if "%OUT_DIR%"=="" set "OUT_DIR=out"
 set "VCPKG_DIR=%SCRIPT_DIR%\vcpkg"
 set "TRIPLET=x64-windows"
 set "USE_VCPKG=true"
-set "MODE="
-
 goto parse_loop
 
 :usage
 echo Usage: %~nx0 ^<command^>
 echo Commands:
-echo   --server    Configure and build as a server
-echo   --client    Configure and build as a client
 echo   --no-vcpkg  Configure and build without vcpkg (via lib-devel)
 echo   --clean     Remove build directory
 exit /b 0
 
 
 :cmd_build
-set "BUILD_DIR=%OUT_DIR%\%MODE%"
+set "BUILD_DIR=%OUT_DIR%"
 if not exist "%BUILD_DIR%" md "%BUILD_DIR%"
 
 if "%USE_VCPKG%"=="true" (
@@ -37,31 +33,19 @@ if "%USE_VCPKG%"=="true" (
     echo -- Looking in local packages
 )
 
-if /I "%MODE%"=="server" (
-    set "SERVER_FLAG=ON"
-    set "CLIENT_FLAG=OFF"
-) else (
-    set "SERVER_FLAG=OFF"
-    set "CLIENT_FLAG=ON"
-)
-
 if "%USE_VCPKG%"=="true" (
     (
         cmake -S . -B "%BUILD_DIR%" ^
             -DCMAKE_TOOLCHAIN_FILE="%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake" ^
             -DVCPKG_TARGET_TRIPLET=%TRIPLET% ^
-            -DAPP_NAME="vsna_%MODE%" ^
-            -DSERVER=%SERVER_FLAG% ^
-            -DCLIENT=%CLIENT_FLAG%
+            -DAPP_NAME="vsna"
         cmake --build "%BUILD_DIR%" --config Debug
     )
 ) else (
     (
         cmake -S . -B "%BUILD_DIR%" ^
             -DVCPKG_TARGET_TRIPLET=%TRIPLET% ^
-            -DAPP_NAME="vsna_%MODE%" ^
-            -DSERVER=%SERVER_FLAG% ^
-            -DCLIENT=%CLIENT_FLAG%
+            -DAPP_NAME="vsna"
         cmake --build "%BUILD_DIR%" --config Debug
     )
 )
@@ -94,10 +78,6 @@ if /I "%~1"=="--clean" (
     call :usage
     popd
     exit /b 0
-) else if /I "%~1"=="--server" (
-    set "MODE=server"
-) else if /I "%~1"=="--client" (
-    set "MODE=client"
 ) else if /I "%~1"=="--no-vcpkg" (
     set "USE_VCPKG=false"
 ) else (
@@ -111,21 +91,9 @@ goto parse_loop
 
 
 :parse_done
-if "%MODE%"=="" (
-    set "MODE=server"
-    call :cmd_build
-
-    set "MODE=client"
-    call :cmd_build
-
-    popd
-    exit /b 0
-) else (
-    call :cmd_build
-    popd
-    exit /b 0
-)
-
+call :cmd_build
+popd
+exit /b 0
 
 :cmd_end
 popd

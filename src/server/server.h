@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "config.h"
-#include "session.h"
+#include "server_session.h"
 #include "helper.h"
 
 using tcp = boost::asio::ip::tcp;

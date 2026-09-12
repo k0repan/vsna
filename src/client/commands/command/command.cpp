@@ -4,10 +4,10 @@
 bool HelpCommand::handle(ARG_VECTOR args)
 {
 	auto commands = _manager.listCommands();
-	std::cout << "[=] Available commands:" << std::endl;
+	TUI::print("[=] Available commands:");
 	for (const auto& cmd : commands)
 	{
-		std::cout << "\t" << cmd.name << " " << cmd.usage << " - " << cmd.description << std::endl;
+		TUI::print("\t" + cmd.name + " " + cmd.usage + " - " + cmd.description);
 	}
 	return false;
 }

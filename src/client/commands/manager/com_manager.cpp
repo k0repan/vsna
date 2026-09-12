@@ -26,7 +26,7 @@ bool CommandManager::execute(STRING_ARG name, STRING_VECTOR args)
 	auto it = _commands.find(std::string(name));
 	if (it == _commands.end())
 	{
-		std::cout << "Unknown command: " << name << std::endl;
+		TUI::print("Unknown command: " + std::string(name));
 		return false;
 	}
 	return it->second->handle(args);

@@ -43,7 +43,7 @@ void Server::run()
 {
 	setup_acceptor();
 	do_accept();
-	std::cout << "Server is running on " << _config.getAddr().toString() << std::endl;
+	TUI::print("Server is running on " + _config.getAddr().toString());
 
 	_threads.reserve(max_threads - 1);
 
@@ -52,7 +52,7 @@ void Server::run()
 		_threads.emplace_back([this] { _io_context.run(); });
 	}
 
-	std::cout << "Main thread started." << std::endl;
+	TUI::print("Main thread started.");
 	_io_context.run();
 }
 
@@ -71,8 +71,8 @@ void Server::on_accept(beast::error_code ec, tcp::socket socket)
 	}
 	else
 	{
-		std::cout << "Accepted " << socket.remote_endpoint().address().to_string() << ':'
-		          << socket.remote_endpoint().port() << '\n';
+		TUI::print("Accepted " + socket.remote_endpoint().address().to_string() + ':'
+		          + std::to_string(socket.remote_endpoint().port()));
 
 		// Create the session and run it
 		std::make_shared<ServerSession>(std::move(socket))->run();

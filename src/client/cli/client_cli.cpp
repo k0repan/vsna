@@ -1,6 +1,6 @@
-#include "client_ui.h"
+#include "client_cli.h"
 
-void ClientUI::CLIParse(int argc, char **argv)
+void ClientCLI::CLIParse(int argc, char **argv)
 {
 	CLI::App app{ "VSNA Client" };
 
@@ -21,7 +21,7 @@ void ClientUI::CLIParse(int argc, char **argv)
 	catch (const CLI::ParseError& e)
 	{
 		app.exit(e);
-		std::cerr << e.what() << std::endl;
+		TUI::print(e.what());
 		exit(-1);
 	}
 
@@ -35,13 +35,13 @@ void ClientUI::CLIParse(int argc, char **argv)
 			}
 			catch (const std::exception& e)
 			{
-				std::cerr << e.what() << std::endl;
+				TUI::print(e.what());
 				exit(-1);
 			}
 		}
 		else
 		{
-			std::cerr << "[!] File not found: " << configFile << std::endl;
+			TUI::print("[!] File not found: " + configFile);
 			exit(-1);
 		}
 	}
@@ -51,25 +51,14 @@ void ClientUI::CLIParse(int argc, char **argv)
 	}
 }
 
-std::pair<std::string, STRING_VECTOR> ClientUI::parseArgs(STRING_ARG input)
-{
-	STRING_VECTOR args = split(input);
-	return { args[0], STRING_VECTOR(args.begin() + 1, args.end()) };
-}
-
-void ClientUI::run(int argc, char **argv)
+void ClientCLI::run(int argc, char **argv)
 {
 	this->CLIParse(argc, argv);
 	_commandManager.initCommands();
 
-	//_tuiApp.run();
-
-	_client.print();
-
-	std::string input;
+	/*
 	while (true)
 	{
-		std::cout << "> ";
 		std::getline(std::cin, input);
 		auto [name, cmdArgs] = parseArgs(input);
 
@@ -78,5 +67,16 @@ void ClientUI::run(int argc, char **argv)
 
 		if (_commandManager.execute(name, cmdArgs))
 			break;
-	}
+	} */
 }
+
+bool ClientCLI::execute(STRING_ARG input)
+{
+	auto [name, cmdArgs] = parseArgs(input);
+
+	if (name.empty())
+		return true;
+
+	return _commandManager.execute(name, cmdArgs);
+}
+
