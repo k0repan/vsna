@@ -16,6 +16,7 @@ void TUIOutputStream::push_msg(TUI::OutputType type, const std::string& str,
 std::vector<OutputMsg> TUIOutputStream::drain()
 {
 	std::vector<OutputMsg> result;
+	result.reserve(_queue.size());
 	while (!_queue.empty())
 	{
 		result.push_back(std::move(_queue.front()));
