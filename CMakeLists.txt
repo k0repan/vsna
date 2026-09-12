@@ -6,49 +6,48 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+if (MSVC)
+    add_compile_options(/bigobj)
+    add_compile_options(/utf-8)
+endif()
 if(POLICY CMP0167)
     cmake_policy(SET CMP0167 OLD)
 endif()
 include(FetchContent)
 
-# Definitions for compilation
-option(SERVER "Build server binary" OFF)
-option(CLIENT "Build client binary" OFF)
-
 # Paths
 set(PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-set(COMMON_DIR   ${PROJECT_ROOT}/common)
-set(SERVER_DIR   ${PROJECT_ROOT}/server)
-set(CLIENT_DIR   ${PROJECT_ROOT}/client)
+set(SRC_DIR      ${PROJECT_ROOT}/src)
+set(UTILS_DIR    ${SRC_DIR}/utils)
+set(SERVER_DIR   ${SRC_DIR}/server)
+set(CLIENT_DIR   ${SRC_DIR}/client)
+set(COMMON_DIR   ${SRC_DIR}/common)
 
 # Sources
-# TOOO : Can be replaced with file(GLOB_RECURSE)
-set(COMMON_SOURCES
-    ${COMMON_DIR}/addr.cpp
-    ${COMMON_DIR}/addr.h
-    ${COMMON_DIR}/config.cpp 
-    ${COMMON_DIR}/config.h
-    ${COMMON_DIR}/logger.h
+set(UTILS_SOURCES
+    ${UTILS_DIR}/addr/addr.cpp
+    ${UTILS_DIR}/config/config.cpp
+    ${UTILS_DIR}/logger/logger.h
+    ${UTILS_DIR}/helper/helper.h
+    ${UTILS_DIR}/helper/cli_parse.h
+    ${UTILS_DIR}/output/tui_output.cpp
 )
 set(SERVER_SOURCES
     ${SERVER_DIR}/server.cpp
-    ${SERVER_DIR}/server.h
-    ${SERVER_DIR}/server_cli.cpp
-    ${SERVER_DIR}/server_cli.h
-    ${SERVER_DIR}/session.cpp
+    ${SERVER_DIR}/cli/server_cli.cpp
+    ${SERVER_DIR}/session/server_session.cpp
 )
 set(CLIENT_SOURCES
     ${CLIENT_DIR}/client.cpp
-    ${CLIENT_DIR}/session.cpp
+    ${CLIENT_DIR}/session/client_session.cpp
     ${CLIENT_DIR}/cli/client_cli.cpp
-    ${CLIENT_DIR}/cli/menu.cpp
-    ${CLIENT_DIR}/cli/command_manager.cpp
+    ${CLIENT_DIR}/commands/command/command.cpp
+    ${CLIENT_DIR}/commands/manager/com_manager.cpp
+    ${COMMON_DIR}/tui/tui.cpp
 )
 
-# Core
-file(GLOB_RECURSE CORE_SRCS "${PROJECT_ROOT}/core/*.cpp")
-file(GLOB_RECURSE CORE_HDRS "${PROJECT_ROOT}/core/*.h")
-add_executable(${PROJECT_NAME} ${CORE_SRCS} ${CORE_HDRS})
+# Main
+add_executable(${PROJECT_NAME} ${SRC_DIR}/main.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${APP_NAME}")
 
 # Boost
@@ -61,9 +60,11 @@ find_package(Boost REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 find_package(Threads REQUIRED)
 
 if (Boost_FOUND)
-    add_definitions(-DHAS_BOOST -D_WIN32_WINNT=0x0A00)
+    if (WIN32)
+        add_definitions(-DHAS_BOOST -D_WIN32_WINNT=0x0A00 -DWIN32_LEAN_AND_MEAN)
+    endif()
     target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} PRIVATE 
+    target_link_libraries(${PROJECT_NAME} PRIVATE
         Boost::headers
         ${Boost_LIBRARIES}
         Threads::Threads
@@ -73,42 +74,43 @@ else()
     message(FATAL_ERROR "-- Boost status: Not found")
 endif()
 
-# Common
-add_library(common STATIC ${COMMON_SOURCES})
-target_include_directories(common PUBLIC ${COMMON_DIR})
-target_link_libraries(common PUBLIC Boost::headers ${Boost_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} PRIVATE common)
+# Utils
+add_library(utils STATIC ${UTILS_SOURCES})
+target_include_directories(utils PUBLIC
+    ${PROJECT_ROOT}
+    ${COMMON_DIR}/types
+    ${COMMON_DIR}/tui
+    ${UTILS_DIR}
+    ${UTILS_DIR}/addr
+    ${UTILS_DIR}/config
+    ${UTILS_DIR}/logger
+    ${UTILS_DIR}/helper
+    ${UTILS_DIR}/output
+)
+target_link_libraries(utils PUBLIC Boost::headers ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE utils)
 
+# Compile definitions
 # Server
 add_library(server STATIC ${SERVER_SOURCES})
-target_link_libraries(server PRIVATE common)
-target_include_directories(server PUBLIC ${SERVER_DIR} ${COMMON_DIR})
+target_link_libraries(server PRIVATE utils)
+target_include_directories(server PUBLIC
+    ${SERVER_DIR}
+    ${SERVER_DIR}/cli
+    ${SERVER_DIR}/session)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE server)
+target_include_directories(${PROJECT_NAME} PRIVATE ${SERVER_DIR})
 
 # Client
 add_library(client STATIC ${CLIENT_SOURCES})
-target_link_libraries(client PRIVATE common)
+target_link_libraries(client PRIVATE utils)
 target_include_directories(client PUBLIC
-    ${CLIENT_DIR} 
-    ${CLIENT_DIR}/cli 
-    ${COMMON_DIR}
-)
+    ${CLIENT_DIR}
+    ${CLIENT_DIR}/cli
+    ${CLIENT_DIR}/commands/command
+    ${CLIENT_DIR}/commands/manager
+    ${CLIENT_DIR}/session)
 
-# Copy config.json
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/config.json
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/config.json
-)
-
-# Compile definitions
-if (SERVER)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE BUILD_SERVER=1)
-    target_link_libraries(${PROJECT_NAME} PRIVATE server)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${SERVER_DIR})
-elseif (CLIENT)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE BUILD_CLIENT=1)
-    target_link_libraries(${PROJECT_NAME} PRIVATE client)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${CLIENT_DIR})
-else()
-    message(FATAL_ERROR "Either SERVER or CLIENT must be ON")
-endif()
+target_link_libraries(${PROJECT_NAME} PRIVATE client)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CLIENT_DIR})
