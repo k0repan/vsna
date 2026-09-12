@@ -7,7 +7,6 @@
     all levels / functions: debug, info, warn, error
  */
 
-#include <print>
 #include <format>
 #include <source_location>
 
@@ -37,7 +36,7 @@ template <Level l, class... Args> struct print<l, const char *, Args...>
 		{
 			levelString = "ERROR";
 		}
-		std::println("[ {} ] {} : line {}  {}", levelString, loc.file_name(), loc.line(),
+		std::cout << std::format("[ {} ] {} : line {}  {}", levelString, loc.file_name(), loc.line(),
 		             std::vformat(msg, std::make_format_args(args...)));
 	}
 };
