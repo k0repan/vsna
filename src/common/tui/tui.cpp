@@ -1,13 +1,5 @@
 #include "tui.h"
 
-#include <algorithm>
-#include <chrono>
-#include <cctype>
-#include <cstdio>
-#include <ctime>
-#include <iomanip>
-#include <sstream>
-
 namespace {
 
 struct ThemeOption
@@ -76,7 +68,7 @@ std::string HistoryInput::take_text()
 	return text;
 }
 
-void HistoryInput::add_history(const std::string& entry)
+void HistoryInput::add_history(STRING_ARG entry)
 {
 	if (entry.empty())
 		return;
@@ -245,7 +237,7 @@ void TuiApp::submit()
 	add_line(LineKind::kUser, "[" + timestamp() + "] You: " + text);
 }
 
-bool TuiApp::execute_command(const std::string& input)
+bool TuiApp::execute_command(STRING_ARG input)
 {
 	return clientCLI_.execute(input);
 }
@@ -298,7 +290,7 @@ void TuiApp::scan_dir_into(TreeNode& node, const fs::path& dir)
 	node.children = std::move(kids);
 }
 
-void TuiApp::open_list_dialog(const std::string& path_str)
+void TuiApp::open_list_dialog(STRING_ARG path_str)
 {
 	std::error_code ec;
 	fs::path target = fs::absolute(fs::path(path_str), ec);
@@ -343,7 +335,7 @@ void TuiApp::open_list_dialog(const std::string& path_str)
 	list_tree_->refresh();
 
 	list_tree_->on_submit = [this](TreeNode *node) {
-		const std::string& data = node->user_data;
+		STRING_ARG data = node->user_data;
 		if (data.rfind("dir:", 0) == 0)
 		{
 			if (!node->children.empty())
@@ -380,17 +372,17 @@ void TuiApp::close_list_dialog()
 	}
 }
 
-void TuiApp::append_system(const std::string& text)
+void TuiApp::append_system(STRING_ARG text)
 {
 	add_line(LineKind::kSystem, "[" + timestamp() + "] System: " + text);
 }
 
-void TuiApp::append_result(const std::string& text)
+void TuiApp::append_result(STRING_ARG text)
 {
 	add_line(LineKind::kResult, "[" + timestamp() + "] Result: " + text);
 }
 
-void TuiApp::add_line(LineKind kind, const std::string& text)
+void TuiApp::add_line(LineKind kind, STRING_ARG text)
 {
 	lines_.push_back({ text, kind });
 	refresh_output();
