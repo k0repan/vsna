@@ -10,6 +10,7 @@
 #include <sstream>
 
 #include "client_cli.h"
+#include "server_cli.h"
 #include "helper.h"
 #include "tui_output.h"
 
@@ -50,8 +51,8 @@ class HistoryInput : public Input {
 
 class TuiApp {
   public:
-	void run(int argc, char **argv);
-	TuiApp() : clientCLI_() {}
+	void run(char **argv);
+	TuiApp() : clientCLI_(), serverCLI_() {}
 
   private:
 	void build_ui();
@@ -88,4 +89,5 @@ class TuiApp {
 	std::vector<OutputLine> lines_;
 
 	ClientCLI clientCLI_;
+	ServerCLI serverCLI_;
 };
