@@ -129,6 +129,7 @@ void TuiApp::run(int argc, char **argv)
 {
     clientCLI_.run(argc, argv);
 	build_ui();
+	add_line(LineKind::kSystem, kHelloBanner);
 	append_system("Welcome! Type a message below and press Enter to send it.");
 	append_system("Automatic status messages arrive every 3 seconds (toggle in Settings).");
 	append_system("Type 'help' to list available commands.");
@@ -151,8 +152,12 @@ void TuiApp::build_ui()
 	root_->add(header);
 	
 	tabs_ = std::make_shared<Tabs>();
-	tabs_->add_tab("Chat", build_output_page());
+	tabs_->add_tab("Terminal", build_output_page());
 	tabs_->add_tab("Settings", build_settings_page());
+	tabs_->on_change = [this](int idx) {
+		if (idx == 0)
+			input_->set_focus(true);
+	};
 	root_->add(tabs_);
 
 	app_.register_key(13, [this] { submit(); });
@@ -167,6 +172,7 @@ std::shared_ptr<Vertical> TuiApp::build_output_page()
 	output_text_ = std::make_shared<Static>(StyledText(""));
 	output_scroll_ = std::make_shared<ScrollableVertical>();
 	output_scroll_->tab_stop = false;
+	output_scroll_->focusable = false;
 	output_scroll_->add(output_text_);
 
 	auto output_border = std::make_shared<Border>(BorderStyle::Rounded);
@@ -186,6 +192,7 @@ std::shared_ptr<Vertical> TuiApp::build_output_page()
 
 	auto input_border = std::make_shared<Border>(BorderStyle::Rounded);
 	input_border->fixed_height = 3;
+	input_border->set_title(" Input ");
 	input_border->add(input_row);
 
 	page->add(output_border);
@@ -415,6 +422,13 @@ void TuiApp::refresh_output()
 	output_text_->fixed_height = total_rows;
 
 	int view_height = output_scroll_->height;
-	int max_scroll = total_rows - view_height;
-	output_scroll_->scroll_offset = max_scroll > 0 ? max_scroll : 0;
+	if (view_height <= 0)
+	{
+		output_scroll_->scroll_offset = 0;
+	}
+	else
+	{
+		int max_scroll = total_rows - view_height;
+		output_scroll_->scroll_offset = max_scroll > 0 ? max_scroll : 0;
+	}
 }
