@@ -10,12 +10,16 @@ void TUIOutputStream::push_msg(TUI::OutputType type, const std::string& str,
 		type_msg,
 		src_msg,
 		str);
-	_queue.push(formatted);
+	_queue.push({type, formatted});
 }
 
-queue_str TUIOutputStream::drain()
+std::vector<OutputMsg> TUIOutputStream::drain()
 {
-	queue_str drained = this->_queue;
-	this->_queue = queue_str();
-	return drained;
+	std::vector<OutputMsg> result;
+	while (!_queue.empty())
+	{
+		result.push_back(std::move(_queue.front()));
+		_queue.pop();
+	}
+	return result;
 }

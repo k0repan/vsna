@@ -4,8 +4,6 @@
 #include <format>
 #include <queue>
 
-using queue_str = std::queue<std::string>;
-
 namespace TUI
 {
     enum class OutputType {
@@ -13,6 +11,11 @@ namespace TUI
 		Error,
 	};
 }
+
+struct OutputMsg {
+    TUI::OutputType type;
+    std::string text;
+};
 
 class TUIOutputStream
 {
@@ -23,13 +26,13 @@ public:
     }
 	void push_msg(TUI::OutputType type, const std::string& str,
 		std::source_location loc = std::source_location::current());
-	queue_str drain();
+	std::vector<OutputMsg> drain();
 
 private:
     TUIOutputStream() = default;
 	~TUIOutputStream() = default;
 
-	queue_str _queue;
+	std::queue<OutputMsg> _queue;
 };
 
 namespace TUI

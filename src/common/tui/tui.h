@@ -3,17 +3,14 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cctype>
-#include <cstdio>
 #include <ctime>
 #include <filesystem>
-#include <iomanip>
-#include <sstream>
 #include <string>
 #include <vector>
 
 #include "client_cli.h"
 #include "helper.h"
+#include "tui_output.h"
 
 namespace fs = std::filesystem;
 using namespace cpptui;

@@ -251,12 +251,11 @@ bool TuiApp::execute_command(const std::string& input)
 
 void TuiApp::drain_output()
 {
-    queue_str queue = TUIOutputStream::instance().drain();
-	while (!queue.empty())
-	{
-		add_line(LineKind::kResult, queue.front());
-		queue.pop();
-	}
+    for (const auto& msg : TUIOutputStream::instance().drain())
+    {
+        const LineKind type = msg.type == TUI::OutputType::Error ? LineKind::kError : LineKind::kResult;
+        add_line(type, msg.text);
+    }
 }
 
 void TuiApp::scan_dir_into(TreeNode& node, const fs::path& dir)
