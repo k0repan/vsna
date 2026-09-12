@@ -153,13 +153,14 @@ void TuiApp::build_ui()
 {
 	Theme::set_theme(Theme::Dark());
 	root_ = std::make_shared<Vertical>();
+	auto header = std::make_shared<Horizontal>();
+	header->fixed_height = 1;
+	header->add(std::make_shared<Button>("Quit", [] { App::quit(); }));
+	root_->add(header);
+	
 	tabs_ = std::make_shared<Tabs>();
-
-	tabs_->add_tab("Quit", std::make_shared<Button>("Quit", [] { App::quit(); }));
-
-	tabs_->add_tab("Output", build_output_page());
+	tabs_->add_tab("Chat", build_output_page());
 	tabs_->add_tab("Settings", build_settings_page());
-
 	root_->add(tabs_);
 
 	app_.register_key(13, [this] { submit(); });
