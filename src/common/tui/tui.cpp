@@ -239,7 +239,7 @@ void TuiApp::submit()
 	input_->add_history(text);
 
 	if (execute_command(text))
-		return;
+		App::quit();
 
 	add_line(LineKind::kUser, "[" + timestamp() + "] You: " + text);
 }
