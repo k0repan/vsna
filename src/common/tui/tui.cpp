@@ -125,9 +125,10 @@ void HistoryInput::browse(int dir)
 
 // TuiApp
 
-void TuiApp::run(int argc, char **argv)
+void TuiApp::run(char **argv)
 {
-    clientCLI_.run(argc, argv);
+    clientCLI_.run(argv);
+    serverCLI_.run(argv);
 	build_ui();
 	add_line(LineKind::kSystem, kHelloBanner);
 	append_system("Welcome! Type a message below and press Enter to send it.");
@@ -246,7 +247,7 @@ void TuiApp::submit()
 
 bool TuiApp::execute_command(STRING_ARG input)
 {
-	return clientCLI_.execute(input);
+	return clientCLI_.invoke(input);
 }
 
 void TuiApp::drain_output()

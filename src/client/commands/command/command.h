@@ -100,7 +100,7 @@ class ExitCommand : public Command {
 	{}
 	bool handle(ARG_VECTOR args) override
 	{
-		TUI::print("[~] Program was exit.");
+		TUI::print("Program was exit.");
 		return true;
 	}
 };

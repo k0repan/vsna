@@ -1,19 +1,19 @@
 #pragma once
 #include <boost/asio.hpp>
 #include <iostream>
-#include <libs/CLI11.hpp>
 #include <memory>
 #include <string>
+#include <filesystem>
 
 #include "config.h"
 #include "server.h"
 #include "helper.h"
+#include "cli_parse.h"
 
 class ServerCLI {
   public:
 	ServerCLI() = default;
-	void run(int argc, char **argv);
-	void CLIParse(int argc, char **argv);
+	void run(char **argv);
 
   private:
 	std::shared_ptr<Server> _server{ std::make_shared<Server>() };

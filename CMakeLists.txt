@@ -29,6 +29,7 @@ set(UTILS_SOURCES
     ${UTILS_DIR}/config/config.cpp
     ${UTILS_DIR}/logger/logger.h
     ${UTILS_DIR}/helper/helper.h
+    ${UTILS_DIR}/helper/cli_parse.h
     ${UTILS_DIR}/output/tui_output.cpp
 )
 set(SERVER_SOURCES
