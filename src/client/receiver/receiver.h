@@ -6,26 +6,18 @@
 #include <vector>
 
 #include "config.h"
-#include "server_session.h"
+#include "receiver_session.h"
 #include "helper.h"
 
 using tcp = boost::asio::ip::tcp;
 using socket_ptr = boost::shared_ptr<tcp::socket>;
 
-class Server : public std::enable_shared_from_this<Server> {
+class Receiver : public std::enable_shared_from_this<Receiver> {
   public:
-	Server() : _io_context(max_threads), _acceptor(_io_context)
+	Receiver() : _io_context(max_threads), _acceptor(_io_context), _config()
 	{}
 	void run();
-
-	void setConfig(const Config& config)
-	{
-		_config = config;
-	}
-	Config getConfig() const
-	{
-		return _config;
-	}
+	void stop() { _io_context.stop(); };
 
   private:
 	Config _config;

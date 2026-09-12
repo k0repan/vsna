@@ -1,5 +1,10 @@
 {
-    "ip": "0.0.0.0",
+    // server ip is 0.0.0.0 by default
+    // TODO: make restrict_ OR allowed_ for local ips
+    // addr to connect
+    "ip": "127.0.0.1",
+    // port to connect
     "port": "8000",
+    // path to exchange data
     "path": "/"
 }

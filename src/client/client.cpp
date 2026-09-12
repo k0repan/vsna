@@ -59,17 +59,18 @@ void Client::connect(ARG_VECTOR args)
 	// TODO: Can we use CLI11 here?
 	std::string line;
 	TUI::print("Connected. Type messages to send (type 'quit' to disconnect):\n");
-	while (std::getline(std::cin, line))
-	{
-		if (line == "quit")
-		{
-			break;
-		}
-		if (!line.empty())
-		{
-			_session->post_write(line);
-		}
-	}
+	_is_connected = true;
+	//while (std::getline(std::cin, line))
+	//{
+	//	if (line == "quit")
+	//	{
+	//		break;
+	//	}
+	//	if (!line.empty())
+	//	{
+	//		_session->post_write(line);
+	//	}
+	//}
 
 	// Cleanup
 	disconnect();
@@ -77,10 +78,11 @@ void Client::connect(ARG_VECTOR args)
 
 void Client::sendMsg(ARG_VECTOR args)
 {
-	TUI::print("Sending message...");
-	std::string msg = join(args, " ");
-	TUI::print("Message: " + msg);
-	TUI::print("Message length: " + std::to_string(msg.length()));
+    if (!_session) { TUI::print_err("Not connected. Use 'connect' first."); return; }
+    std::string msg = join(args, " ");
+    if (msg.empty()) { TUI::print_err("Usage: send <message>"); return; }
+    _session->post_write(msg);
+    TUI::print("You: " + msg);
 }
 
 void Client::disconnect()
@@ -95,4 +97,5 @@ void Client::disconnect()
 	}
 
 	_session.reset();
+	_is_connected = false;
 }

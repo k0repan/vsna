@@ -19,9 +19,9 @@ include(FetchContent)
 set(PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 set(SRC_DIR      ${PROJECT_ROOT}/src)
 set(UTILS_DIR    ${SRC_DIR}/utils)
-set(SERVER_DIR   ${SRC_DIR}/server)
 set(CLIENT_DIR   ${SRC_DIR}/client)
 set(COMMON_DIR   ${SRC_DIR}/common)
+set(TUI_DIR      ${SRC_DIR}/tui)
 
 # Sources
 set(UTILS_SOURCES
@@ -29,12 +29,8 @@ set(UTILS_SOURCES
     ${UTILS_DIR}/config/config.cpp
     ${UTILS_DIR}/logger/logger.h
     ${UTILS_DIR}/helper/helper.h
+    ${UTILS_DIR}/helper/cli_parse.h
     ${UTILS_DIR}/output/tui_output.cpp
-)
-set(SERVER_SOURCES
-    ${SERVER_DIR}/server.cpp
-    ${SERVER_DIR}/cli/server_cli.cpp
-    ${SERVER_DIR}/session/server_session.cpp
 )
 set(CLIENT_SOURCES
     ${CLIENT_DIR}/client.cpp
@@ -42,7 +38,11 @@ set(CLIENT_SOURCES
     ${CLIENT_DIR}/cli/client_cli.cpp
     ${CLIENT_DIR}/commands/command/command.cpp
     ${CLIENT_DIR}/commands/manager/com_manager.cpp
-    ${COMMON_DIR}/tui/tui.cpp
+    ${CLIENT_DIR}/receiver/receiver.cpp
+    ${CLIENT_DIR}/receiver/session/receiver_session.cpp
+)
+set(TUI_SOURCES
+    ${TUI_DIR}/tui.cpp
 )
 
 # Main
@@ -78,29 +78,17 @@ add_library(utils STATIC ${UTILS_SOURCES})
 target_include_directories(utils PUBLIC
     ${PROJECT_ROOT}
     ${COMMON_DIR}/types
-    ${COMMON_DIR}/tui
     ${UTILS_DIR}
+    ${UTILS_DIR}/output
     ${UTILS_DIR}/addr
     ${UTILS_DIR}/config
     ${UTILS_DIR}/logger
     ${UTILS_DIR}/helper
-    ${UTILS_DIR}/output
 )
 target_link_libraries(utils PUBLIC Boost::headers ${Boost_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PRIVATE utils)
 
 # Compile definitions
-# Server
-add_library(server STATIC ${SERVER_SOURCES})
-target_link_libraries(server PRIVATE utils)
-target_include_directories(server PUBLIC
-    ${SERVER_DIR}
-    ${SERVER_DIR}/cli
-    ${SERVER_DIR}/session)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE server)
-target_include_directories(${PROJECT_NAME} PRIVATE ${SERVER_DIR})
-
 # Client
 add_library(client STATIC ${CLIENT_SOURCES})
 target_link_libraries(client PRIVATE utils)
@@ -109,7 +97,19 @@ target_include_directories(client PUBLIC
     ${CLIENT_DIR}/cli
     ${CLIENT_DIR}/commands/command
     ${CLIENT_DIR}/commands/manager
-    ${CLIENT_DIR}/session)
+    ${CLIENT_DIR}/session
+    ${CLIENT_DIR}/receiver
+    ${CLIENT_DIR}/receiver/session)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE client)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CLIENT_DIR})
+
+# TUI
+add_library(tui STATIC ${TUI_SOURCES})
+target_link_libraries(tui PRIVATE utils client)
+target_include_directories(tui PUBLIC
+    ${TUI_DIR}
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE tui)
+target_include_directories(${PROJECT_NAME} PRIVATE ${TUI_DIR})

@@ -50,7 +50,7 @@ class HistoryInput : public Input {
 
 class TuiApp {
   public:
-	void run(int argc, char **argv);
+	void run(char **argv);
 	TuiApp() : clientCLI_() {}
 
   private:
@@ -83,7 +83,6 @@ class TuiApp {
 	std::shared_ptr<TreeView> list_tree_;
 	std::shared_ptr<RadioSet> theme_list_;
 	std::shared_ptr<Checkbox> settings_checkbox_;
-	TimerId focus_fix_timer_{ -1 };
 	TimerId drain_timer_{ -1 };
 	std::vector<OutputLine> lines_;
 

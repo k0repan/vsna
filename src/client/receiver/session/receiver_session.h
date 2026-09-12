@@ -1,9 +1,10 @@
 #pragma once
 #include "pch.h"
+#include "tui_output.h"
 
-class ServerSession : public std::enable_shared_from_this<ServerSession> {
+class ReceiverSession : public std::enable_shared_from_this<ReceiverSession> {
   public:
-	explicit ServerSession(tcp::socket socket) : _ws(std::move(socket))
+	explicit ReceiverSession(tcp::socket socket) : _ws(std::move(socket))
 	{}
 	void run();
 

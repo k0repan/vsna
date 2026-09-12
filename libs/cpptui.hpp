@@ -16203,6 +16203,21 @@ class App {
     key_events_.erase({key, ctrl, alt, shift});
   }
 
+  /// @brief Give focus to a widget, keeping the app's internal focus pointer
+  /// and the widget's render state in sync. Use instead of Widget::set_focus
+  /// when focusing from application code, otherwise the event loop will not
+  /// dispatch keys to the widget. Read-only callbacks are equivalent to the
+  /// same pattern the app uses internally for tab navigation and clicks.
+  void focus(std::shared_ptr<Widget> w) {
+    if (focused_widget_ && focused_widget_ != w) {
+      focused_widget_->set_focus(false);
+    }
+    focused_widget_ = w;
+    if (w && !w->has_focus()) {
+      w->set_focus(true);
+    }
+  }
+
   // Dialog Stack
   std::vector<std::shared_ptr<Dialog>> dialog_stack;
 

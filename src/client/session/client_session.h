@@ -1,6 +1,7 @@
 #pragma once
-#include "pch.h"
 #include <queue>
+#include "pch.h"
+#include "tui_output.h"
 
 class ClientSession : public std::enable_shared_from_this<ClientSession> {
   public:

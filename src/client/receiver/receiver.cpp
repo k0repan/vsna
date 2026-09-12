@@ -1,6 +1,6 @@
-#include "server.h"
+#include "receiver.h"
 
-void Server::setup_acceptor()
+void Receiver::setup_acceptor()
 {
 	beast::error_code ec;
 	tcp::endpoint endpoint(asio::ip::make_address(_config.getAddr().ip()),
@@ -22,7 +22,7 @@ void Server::setup_acceptor()
 		return;
 	}
 
-	// Bind to the server address
+	// Bind to the Receiver address
 	_acceptor.bind(endpoint, ec);
 	if (ec)
 	{
@@ -39,11 +39,11 @@ void Server::setup_acceptor()
 	}
 }
 
-void Server::run()
+void Receiver::run()
 {
 	setup_acceptor();
 	do_accept();
-	TUI::print("Server is running on " + _config.getAddr().toString());
+	TUI::print("Receiver is running on " + _config.getAddr().toString());
 
 	_threads.reserve(max_threads - 1);
 
@@ -56,14 +56,14 @@ void Server::run()
 	_io_context.run();
 }
 
-void Server::do_accept()
+void Receiver::do_accept()
 {
 	// The new connection gets its own strand
 	_acceptor.async_accept(asio::make_strand(_io_context),
-	                       beast::bind_front_handler(&Server::on_accept, shared_from_this()));
+	                       beast::bind_front_handler(&Receiver::on_accept, shared_from_this()));
 }
 
-void Server::on_accept(beast::error_code ec, tcp::socket socket)
+void Receiver::on_accept(beast::error_code ec, tcp::socket socket)
 {
 	if (ec)
 	{
@@ -75,7 +75,7 @@ void Server::on_accept(beast::error_code ec, tcp::socket socket)
 		          + std::to_string(socket.remote_endpoint().port()));
 
 		// Create the session and run it
-		std::make_shared<ServerSession>(std::move(socket))->run();
+		std::make_shared<ReceiverSession>(std::move(socket))->run();
 	}
 
 	// Accept another connection

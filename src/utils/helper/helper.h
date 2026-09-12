@@ -66,10 +66,3 @@ inline std::string join(ARG_VECTOR strings, STRING_ARG delimiter = " ")
 	}
 	return result;
 }
-
-// split str in name and args
-inline std::pair<std::string, STRING_VECTOR> parseArgs(STRING_ARG input)
-{
-	STRING_VECTOR args = split(input);
-	return { args[0], STRING_VECTOR(args.begin() + 1, args.end()) };
-}

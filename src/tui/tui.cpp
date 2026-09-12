@@ -20,11 +20,11 @@ constexpr int kThemeOptionCount
 
 const char *kHelloBanner =
     R"(
-__      _______ _   _          
-\ \    / / ____| \ | |   /\    
- \ \  / / (___ |  \| |  /  \   
-  \ \/ / \___ \| . ` | / /\ \  
-   \  /  ____) | |\  |/ ____ \ 
+__      _______ _   _
+\ \    / / ____| \ | |   /\
+ \ \  / / (___ |  \| |  /  \
+  \ \/ / \___ \| . ` | / /\ \
+   \  /  ____) | |\  |/ ____ \
     \/  |_____/|_| \_/_/    \_\)";
 
 } // namespace
@@ -125,19 +125,16 @@ void HistoryInput::browse(int dir)
 
 // TuiApp
 
-void TuiApp::run(int argc, char **argv)
+void TuiApp::run(char **argv)
 {
-    clientCLI_.run(argc, argv);
+    clientCLI_.run(argv);
 	build_ui();
 	add_line(LineKind::kSystem, kHelloBanner);
 	append_system("Welcome! Type a message below and press Enter to send it.");
 	append_system("Automatic status messages arrive every 3 seconds (toggle in Settings).");
 	append_system("Type 'help' to list available commands.");
 	append_system("Press Ctrl+C or click Quit to exit.");
-	focus_fix_timer_ = app_.add_timer(1, [this] {
-		app_.remove_timer(focus_fix_timer_);
-		input_->set_focus(true);
-	});
+	app_.focus(input_);
 	drain_timer_ = app_.add_timer(50, [this] { drain_output(); });
 	app_.run(root_);
 }
@@ -150,13 +147,13 @@ void TuiApp::build_ui()
 	header->fixed_height = 1;
 	header->add(std::make_shared<Button>("Quit", [] { App::quit(); }));
 	root_->add(header);
-	
+
 	tabs_ = std::make_shared<Tabs>();
 	tabs_->add_tab("Terminal", build_output_page());
 	tabs_->add_tab("Settings", build_settings_page());
 	tabs_->on_change = [this](int idx) {
 		if (idx == 0)
-			input_->set_focus(true);
+			app_.focus(input_);
 	};
 	root_->add(tabs_);
 
@@ -246,7 +243,7 @@ void TuiApp::submit()
 
 bool TuiApp::execute_command(STRING_ARG input)
 {
-	return clientCLI_.execute(input);
+	return clientCLI_.invoke(input);
 }
 
 void TuiApp::drain_output()
@@ -375,7 +372,7 @@ void TuiApp::close_list_dialog()
 	if (list_dialog_ && list_dialog_->is_open)
 	{
 		app_.close_dialog(list_dialog_);
-		input_->set_focus(true);
+		app_.focus(input_);
 	}
 }
 

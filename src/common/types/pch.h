@@ -5,11 +5,10 @@
 #include <boost/beast/websocket.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/smart_ptr.hpp>
-#include <iostream>
 #include <thread>
 
 #include "helper.h"
-#include "tui_output.h"
+// #include "tui_output.h"
 
 using namespace boost::placeholders;
 using tcp = boost::asio::ip::tcp;
@@ -26,5 +25,5 @@ inline void fail(beast::error_code ec, char const *op)
 		return;
 	}
 
-	TUI::print(std::string(op) + ": " + ec.message());
+	// TUI::print(std::string(op) + ": " + ec.message());
 }
