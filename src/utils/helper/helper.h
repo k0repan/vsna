@@ -8,6 +8,7 @@
 constexpr uint16_t max_length{ 1024 };
 constexpr uint16_t max_threads{ 4 };
 
+// erase whitespace from both ends of a string
 inline std::string trim(STRING_ARG s)
 {
 	size_t begin = s.find_first_not_of(" \t\r\n");
@@ -64,4 +65,11 @@ inline std::string join(ARG_VECTOR strings, STRING_ARG delimiter = " ")
 		result += delimiter + strings[i];
 	}
 	return result;
+}
+
+// split str in name and args
+inline std::pair<std::string, STRING_VECTOR> parseArgs(STRING_ARG input)
+{
+	STRING_VECTOR args = split(input);
+	return { args[0], STRING_VECTOR(args.begin() + 1, args.end()) };
 }
