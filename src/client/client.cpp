@@ -87,6 +87,11 @@ void Client::sendMsg(ARG_VECTOR args)
 
 void Client::disconnect()
 {
+    if (!_is_connected)
+    {
+        TUI::print_err("Client is not connected.");
+        return;
+    }
     TUI::print("Disconnecting...");
 	_io_context.stop();
 

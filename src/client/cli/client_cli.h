@@ -18,4 +18,12 @@ class ClientCLI {
 	{}
 	void run(int argc, char **argv);
 	bool invoke(STRING_ARG input);
+	bool isClientConnected() const
+	{
+	    return _client.isConnected();
+	};
+	void disconnectClient()
+	{
+	    _client.disconnect();
+	}
 };
