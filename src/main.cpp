@@ -7,7 +7,7 @@
 int main(int argc, char *argv[])
 {
 	TuiApp tuiApp;
-	tuiApp.run(argv);
+	tuiApp.run(argc, argv);
 
 	return EXIT_SUCCESS;
 }

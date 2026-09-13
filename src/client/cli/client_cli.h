@@ -7,7 +7,7 @@
 #include "client.h"
 #include "com_manager.h"
 #include "helper.h"
-#include "cli_parse.h"
+#include "cli.h"
 
 class ClientCLI {
 	Client _client;
@@ -16,6 +16,6 @@ class ClientCLI {
   public:
 	ClientCLI() : _commandManager(_client)
 	{}
-	void run(char **argv);
+	void run(int argc, char **argv);
 	bool invoke(STRING_ARG input);
 };

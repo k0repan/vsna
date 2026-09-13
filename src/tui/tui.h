@@ -50,8 +50,9 @@ class HistoryInput : public Input {
 
 class TuiApp {
   public:
-	void run(char **argv);
-	TuiApp() : clientCLI_() {}
+	void run(int argc, char **argv);
+	TuiApp() : clientCLI_()
+	{}
 
   private:
 	void build_ui();

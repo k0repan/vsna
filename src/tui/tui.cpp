@@ -125,9 +125,9 @@ void HistoryInput::browse(int dir)
 
 // TuiApp
 
-void TuiApp::run(char **argv)
+void TuiApp::run(int argc, char **argv)
 {
-    clientCLI_.run(argv);
+	clientCLI_.run(argc, argv);
 	build_ui();
 	add_line(LineKind::kSystem, kHelloBanner);
 	append_system("Welcome! Type a message below and press Enter to send it.");
@@ -248,11 +248,12 @@ bool TuiApp::execute_command(STRING_ARG input)
 
 void TuiApp::drain_output()
 {
-    for (const auto& msg : TUIOutputStream::instance().drain())
-    {
-        const LineKind type = msg.type == TUI::OutputType::Error ? LineKind::kError : LineKind::kResult;
-        add_line(type, msg.text);
-    }
+	for (const auto& msg : TUIOutputStream::instance().drain())
+	{
+		const LineKind type
+		    = msg.type == TUI::OutputType::Error ? LineKind::kError : LineKind::kResult;
+		add_line(type, msg.text);
+	}
 }
 
 void TuiApp::scan_dir_into(TreeNode& node, const fs::path& dir)
