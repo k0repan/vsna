@@ -73,7 +73,7 @@ void Client::connect(ARG_VECTOR args)
 	//}
 
 	// Cleanup
-	disconnect();
+	//disconnect();
 }
 
 void Client::sendMsg(ARG_VECTOR args)
