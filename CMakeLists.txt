@@ -17,38 +17,33 @@ option(CLIENT "Build client binary" OFF)
 
 # Paths
 set(PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-set(COMMON_DIR   ${PROJECT_ROOT}/common)
-set(SERVER_DIR   ${PROJECT_ROOT}/server)
-set(CLIENT_DIR   ${PROJECT_ROOT}/client)
+set(SRC_DIR      ${PROJECT_ROOT}/src)
+set(UTILS_DIR    ${SRC_DIR}/utils)
+set(SERVER_DIR   ${SRC_DIR}/server)
+set(CLIENT_DIR   ${SRC_DIR}/client)
 
 # Sources
-# TOOO : Can be replaced with file(GLOB_RECURSE)
-set(COMMON_SOURCES
-    ${COMMON_DIR}/addr.cpp
-    ${COMMON_DIR}/addr.h
-    ${COMMON_DIR}/config.cpp 
-    ${COMMON_DIR}/config.h
-    ${COMMON_DIR}/logger.h
+set(UTILS_SOURCES
+    ${UTILS_DIR}/addr/addr.cpp
+    ${UTILS_DIR}/config/config.cpp
+    ${UTILS_DIR}/logger/logger.h
+    ${UTILS_DIR}/helper/helper.h
 )
 set(SERVER_SOURCES
     ${SERVER_DIR}/server.cpp
-    ${SERVER_DIR}/server.h
     ${SERVER_DIR}/server_cli.cpp
-    ${SERVER_DIR}/server_cli.h
     ${SERVER_DIR}/session.cpp
 )
 set(CLIENT_SOURCES
     ${CLIENT_DIR}/client.cpp
-    ${CLIENT_DIR}/session.cpp
-    ${CLIENT_DIR}/cli/client_cli.cpp
-    ${CLIENT_DIR}/cli/menu.cpp
-    ${CLIENT_DIR}/cli/command_manager.cpp
+    ${CLIENT_DIR}/session/session.cpp
+    ${CLIENT_DIR}/ui/client_ui.cpp
+    ${CLIENT_DIR}/menu/menu.cpp
+    ${CLIENT_DIR}/com_manager/command_manager.cpp
 )
 
-# Core
-file(GLOB_RECURSE CORE_SRCS "${PROJECT_ROOT}/core/*.cpp")
-file(GLOB_RECURSE CORE_HDRS "${PROJECT_ROOT}/core/*.h")
-add_executable(${PROJECT_NAME} ${CORE_SRCS} ${CORE_HDRS})
+# Main executable : src/main.cpp picks server/client via BUILD_* defines
+add_executable(${PROJECT_NAME} ${SRC_DIR}/main.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${APP_NAME}")
 
 # Boost
@@ -61,9 +56,11 @@ find_package(Boost REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 find_package(Threads REQUIRED)
 
 if (Boost_FOUND)
-    add_definitions(-DHAS_BOOST -D_WIN32_WINNT=0x0A00)
+    if (WIN32)
+        add_definitions(-DHAS_BOOST -D_WIN32_WINNT=0x0A00 -DWIN32_LEAN_AND_MEAN)
+    endif()
     target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} PRIVATE 
+    target_link_libraries(${PROJECT_NAME} PRIVATE
         Boost::headers
         ${Boost_LIBRARIES}
         Threads::Threads
@@ -73,39 +70,39 @@ else()
     message(FATAL_ERROR "-- Boost status: Not found")
 endif()
 
-# Common
-add_library(common STATIC ${COMMON_SOURCES})
-target_include_directories(common PUBLIC ${COMMON_DIR})
-target_link_libraries(common PUBLIC Boost::headers ${Boost_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} PRIVATE common)
-
-# Server
-add_library(server STATIC ${SERVER_SOURCES})
-target_link_libraries(server PRIVATE common)
-target_include_directories(server PUBLIC ${SERVER_DIR} ${COMMON_DIR})
-
-# Client
-add_library(client STATIC ${CLIENT_SOURCES})
-target_link_libraries(client PRIVATE common)
-target_include_directories(client PUBLIC
-    ${CLIENT_DIR} 
-    ${CLIENT_DIR}/cli 
-    ${COMMON_DIR}
+# Utils
+add_library(utils STATIC ${UTILS_SOURCES})
+target_include_directories(utils PUBLIC
+    ${PROJECT_ROOT}
+    ${SRC_DIR}/common/types
+    ${UTILS_DIR}
+    ${UTILS_DIR}/addr
+    ${UTILS_DIR}/config
+    ${UTILS_DIR}/logger
+    ${UTILS_DIR}/helper
 )
-
-# Copy config.json
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/config.json
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/config.json
-)
+target_link_libraries(utils PUBLIC Boost::headers ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE utils)
 
 # Compile definitions
 if (SERVER)
+    add_library(server STATIC ${SERVER_SOURCES})
+    target_link_libraries(server PRIVATE utils)
+    target_include_directories(server PUBLIC ${SERVER_DIR})
+
     target_compile_definitions(${PROJECT_NAME} PRIVATE BUILD_SERVER=1)
     target_link_libraries(${PROJECT_NAME} PRIVATE server)
     target_include_directories(${PROJECT_NAME} PRIVATE ${SERVER_DIR})
 elseif (CLIENT)
+    add_library(client STATIC ${CLIENT_SOURCES})
+    target_link_libraries(client PRIVATE utils)
+    target_include_directories(client PUBLIC
+        ${CLIENT_DIR}
+        ${CLIENT_DIR}/ui
+        ${CLIENT_DIR}/menu
+        ${CLIENT_DIR}/com_manager
+        ${CLIENT_DIR}/session)
+
     target_compile_definitions(${PROJECT_NAME} PRIVATE BUILD_CLIENT=1)
     target_link_libraries(${PROJECT_NAME} PRIVATE client)
     target_include_directories(${PROJECT_NAME} PRIVATE ${CLIENT_DIR})
