@@ -27,9 +27,9 @@ set(TUI_DIR      ${SRC_DIR}/tui)
 set(UTILS_SOURCES
     ${UTILS_DIR}/addr/addr.cpp
     ${UTILS_DIR}/config/config.cpp
-    ${UTILS_DIR}/logger/logger.h
-    ${UTILS_DIR}/helper/helper.h
-    ${UTILS_DIR}/helper/cli.h
+    ${UTILS_DIR}/logger.h
+    ${UTILS_DIR}/helper.h
+    ${UTILS_DIR}/cli.h
     ${UTILS_DIR}/output/tui_output.cpp
 )
 set(CLIENT_SOURCES

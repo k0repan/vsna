@@ -18,15 +18,6 @@ const ThemeOption kThemeOptions[] = {
 constexpr int kThemeOptionCount
     = static_cast<int>(sizeof(kThemeOptions) / sizeof(kThemeOptions[0]));
 
-const char *kHelloBanner =
-    R"(
-__      _______ _   _
-\ \    / / ____| \ | |   /\
- \ \  / / (___ |  \| |  /  \
-  \ \/ / \___ \| . ` | / /\ \
-   \  /  ____) | |\  |/ ____ \
-    \/  |_____/|_| \_/_/    \_\)";
-
 } // namespace
 
 std::string timestamp()
@@ -129,10 +120,8 @@ void TuiApp::run(int argc, char **argv)
 {
 	clientCLI_.run(argc, argv);
 	build_ui();
-	add_line(LineKind::kSystem, kHelloBanner);
 	append_system("Welcome! Type a message below and press Enter to send it.");
-	append_system("Automatic status messages arrive every 3 seconds (toggle in Settings).");
-	append_system("Type 'help' to list available commands.");
+	append_system("Type '/help' to list available commands.");
 	append_system("Press Ctrl+C or click Quit to exit.");
 	app_.focus(input_);
 	drain_timer_ = app_.add_timer(50, [this] { drain_output(); });

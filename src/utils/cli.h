@@ -16,7 +16,6 @@ inline std::pair<std::string, STRING_VECTOR> parseArgs(STRING_ARG input)
 
 inline Config CLIParse(int argc, char **argv)
 {
-    std::cout << argc << std::endl;
 	if (argc < 3)
 	{
 		std::cerr << "-c,--config flag is required.";
@@ -29,7 +28,6 @@ inline Config CLIParse(int argc, char **argv)
 		exit(-1);
 	}
 	std::string configFile = argv[2];
-	std::cout << configFile << std::endl;
 	Config config;
 	if (std::filesystem::exists(configFile))
 	{
