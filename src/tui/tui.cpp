@@ -143,6 +143,8 @@ void TuiApp::build_ui()
 	tabs_->on_change = [this](int idx) {
 		if (idx == 0)
 			app_.focus(input_);
+		else if (idx == 1)
+			reload_config_fields();
 	};
 	root_->add(tabs_);
 
@@ -190,9 +192,33 @@ std::shared_ptr<Vertical> TuiApp::build_settings_page()
 {
 	auto page = std::make_shared<Vertical>();
 
-	settings_field_ = std::make_shared<Input>();
-	settings_field_->set_value("Application Settings");
-	page->add(settings_field_);
+	auto add_field = [page](const char *name, std::shared_ptr<Input>& field) {
+		auto row = std::make_shared<Horizontal>();
+		row->fixed_height = 1;
+		auto label = std::make_shared<Label>(name);
+		label->fixed_width = 6;
+		field = std::make_shared<Input>();
+		field->fixed_width = 40;
+		row->add(label);
+		row->add(field);
+		page->add(row);
+	};
+
+	page->add(std::make_shared<Label>("Configuration"));
+	add_field("IP:", cfg_ip_);
+	add_field("Port:", cfg_port_);
+	add_field("Path:", cfg_path_);
+
+	auto apply_row = std::make_shared<Horizontal>();
+	apply_row->fixed_height = 1;
+	auto apply_label = std::make_shared<Label>(" ");
+	apply_label->fixed_width = 6;
+	apply_row->add(apply_label);
+	apply_row->add(std::make_shared<Button>("Apply", [this] { apply_config(); }));
+	page->add(apply_row);
+
+	reload_config_fields();
+
 	page->add(std::make_shared<VerticalSpacer>(1));
 
 	theme_list_ = std::make_shared<RadioSet>();
@@ -203,10 +229,37 @@ std::shared_ptr<Vertical> TuiApp::build_settings_page()
 	theme_list_->on_change = [this](int idx) { apply_theme(idx); };
 	page->add(theme_list_);
 
-	page->add(std::make_shared<VerticalSpacer>(1));
-	settings_checkbox_ = std::make_shared<Checkbox>("Enable automatic status messages", true);
-	page->add(settings_checkbox_);
 	return page;
+}
+
+void TuiApp::apply_config()
+{
+	Config cfg;
+	Addr addr;
+	try
+	{
+		addr.setIp(trim(cfg_ip_->get_value()));
+		addr.setPort(trim(cfg_port_->get_value()));
+		cfg.setAddr(addr);
+		cfg.setPath(trim(cfg_path_->get_value()));
+	}
+	catch (const std::exception& e)
+	{
+		TUI::print_err(std::string("Invalid config: ") + e.what());
+		return;
+	}
+	clientCLI_.setConfig(cfg);
+	TUI::print("Config applied: " + cfg.toString());
+}
+
+void TuiApp::reload_config_fields()
+{
+	if (!cfg_ip_ || !cfg_port_ || !cfg_path_)
+		return;
+	const Config cfg = clientCLI_.getConfig();
+	cfg_ip_->set_value(cfg.getAddr().ip());
+	cfg_port_->set_value(cfg.getAddr().port());
+	cfg_path_->set_value(cfg.getPath());
 }
 
 void TuiApp::apply_theme(int idx)

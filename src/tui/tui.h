@@ -59,6 +59,8 @@ class TuiApp {
 	std::shared_ptr<Vertical> build_output_page();
 	std::shared_ptr<Vertical> build_settings_page();
 	void apply_theme(int idx);
+	void apply_config();
+	void reload_config_fields();
 	void submit();
 
 	bool execute_command(STRING_ARG input);
@@ -79,11 +81,12 @@ class TuiApp {
 	std::shared_ptr<ScrollableVertical> output_scroll_;
 	std::shared_ptr<Static> output_text_;
 	std::shared_ptr<HistoryInput> input_;
-	std::shared_ptr<Input> settings_field_;
+	std::shared_ptr<Input> cfg_ip_;
+	std::shared_ptr<Input> cfg_port_;
+	std::shared_ptr<Input> cfg_path_;
 	std::shared_ptr<Dialog> list_dialog_;
 	std::shared_ptr<TreeView> list_tree_;
 	std::shared_ptr<RadioSet> theme_list_;
-	std::shared_ptr<Checkbox> settings_checkbox_;
 	TimerId drain_timer_{ -1 };
 	std::vector<OutputLine> lines_;
 

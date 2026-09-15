@@ -26,4 +26,12 @@ class ClientCLI {
 	{
 	    _client.disconnect();
 	}
+	void setConfig(const Config& config)
+	{
+	    _client.setConfig(config);
+	}
+	Config getConfig() const
+	{
+	    return _client.getConfig();
+	}
 };
