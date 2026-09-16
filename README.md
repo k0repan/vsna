@@ -1,9 +1,8 @@
 # VSNA
-**Virtual Storage and Network Access** is open-source CLI project, implemented on C++, to exchange data between devices on a _VLAN_.
+**Virtual Storage and Network Access** is open-source TUI project, implemented on C++, to exchange data between devices on a _VLAN_.
 
 # Dependencies
 - `boost` - asio + beast (_websocket_);
-- `CLI11` - command line interface parser;
 - `nlohmann/json` - JSON parsing library;
 - `cpptui` - text based user interface library.
 
@@ -21,56 +20,22 @@ If you don't have it, you can install it by running:
 Then you can build the project (for client or server):
 
 ```bash
-.\build.bat [--client|--server]
+.\build.bat
 ```
 
 Otherwise, if you do not specify the flag, both configurations will be built.
 
-If you use Unix system, you can do the same actions via Shell scripts:
+If you use _Unix_ system, you can do the same actions via Shell scripts:
 
 ```bash
 ./init_modules.sh
-./build.sh # See more flags with --help
+./build.sh #--no-vcpkg if boost is installed
 ```
 
 # To run
-**Client**
-
-- With CLI flags:
-
 ```bash
-.\out\client\Debug\vsna_client.exe -i 127.0.0.1 -p 5555 -d \
+.\out\Debug\vsna.exe -c .\config\config.example.json
 ```
-
-- With config file:
-
-```bash
-.\out\client\Debug\vsna_client.exe -c .\config\config.example.json
-```
-
-**Server**
-
-- With CLI flags:
-
-```bash
-.\out\server\Debug\vsna_server.exe -i 0.0.0.0 -p 5555 -d \
-```
-
-- With config file:
-
-```bash
-.\out\server\Debug\vsna_server.exe -c .\config\config.example.json
-```
-
-**CLI Scheme**
-
-|Short, Long name|Description|Default value|
-|---|---|---|
-| `-h`, `--help` | show help message |-|
-| `-p`, `--port <port>` | set port | 8080 |
-| `-i`, `--ip <ip>` | set client/server address | 0.0.0.0 |
-| `-d`, `--dir <path>` | set client/server path | <current directory> |
-| `-c`, `--config <path>` | set config file path | none |
 
 **Project Tree**
 ```
@@ -84,10 +49,10 @@ vsna/
 ├── README.md
 │
 ├── config/                    # конфиги приложения
-│   └── config.example.json    # шаблон для новых развёртываний
+│   ├── config.example.json    # шаблон для новых развёртываний
+│   └── config.json
 │
 ├── libs/                      # header-only сторонние библиотеки
-│   ├── CLI11.hpp              # парсер аргументов командной строки
 │   ├── cpptui.hpp             # TUI-фреймворк
 │   └── json.hpp               # парсинг config.json
 │
@@ -96,25 +61,35 @@ vsna/
     │
     ├── client/                # КЛИЕНТСКАЯ ЧАСТЬ
     │   ├── client.{h,cpp}     # Client: io_context, connect/sendFiles/download (stub'ы)
-    │   ├── session/           # исходящий WebSocket-сеанс (ClientSession, пока one-shot)
-    │   ├── ui/
-    │   │   ├── client_ui.*    # ClientUI: CLI11-парсинг, REPL-цикл, владеет CommandManager
-    │   │   └── tui.*          # демо-TUI на cpptui (в сборку не входит, ждёт адаптации)
-    │   ├── menu/              # MenuItem-иерархия: классы-команды (connect, help, exit...)
-    │   └── com_manager/       # CommandManager: реестр и вызов команд
-    │
-    ├── server/                # СЕРВЕРНАЯ ЧАСТЬ (цель server.lib)
-    │   ├── server_cli.*       # ServerCLI: CLI11-парсинг, владеет Server
-    │   ├── server.*           # Server: acceptor + пул потоков, цикл приёма соединений
-    │   └── session.*          # ServerSession: WS-сессия клиента (read => echo => read)
+    │   ├── cli/               # CLI11-парсинг клиента
+    │   │   └── client_cli.{h,cpp}
+    │   ├── commands/          # система команд
+    │   │   ├── command/       # базовый класс Command
+    │   │   │   └── command.{h,cpp}
+    │   │   └── manager/       # CommandManager: реестр и вызов команд
+    │   │       └── com_manager.{h,cpp}
+    │   ├── receiver/          # приём файлов
+    │   │   ├── receiver.{h,cpp}
+    │   │   └── session/       # ServerSession-сторона на клиенте
+    │   │       └── receiver_session.{h,cpp}
+    │   └── session/           # исходящий WebSocket-сеанс (ClientSession, пока one-shot)
+    │       └── client_session.{h,cpp}
     │
     ├── common/types/          # общие типы
     │   ├── types.h            # STRING_ARG, ARG_VECTOR и др. алиасы
     │   └── pch.h              # precompiled header: boost/beast алиасы, fail()
     │
+    ├── tui/                   # TUI-фреймворк (в сборку не входит, ждёт адаптации)
+    │   └── tui.{h,cpp}
+    │
     └── utils/                 # утилиты общего назначения (цель utils.lib)
+        ├── cli.h              # CLI-утилиты
+        ├── helper.h           # inline-утилиты: trim, splitArgs, isValidIPv4
+        ├── logger.h           # Logger: файловый лог с уровнями
         ├── addr/              # Addr: ip:port, валидация, toString
+        │   └── addr.{h,cpp}
         ├── config/            # Config: загрузка из json, getAddr/getPath
-        ├── helpers/helper.h   # inline-утилиты: trim, splitArgs, isValidIPv4
-        └── logger/            # Logger: файловый лог с уровнями
+        │   └── config.{h,cpp}
+        └── output/            # TUI-вывод
+            └── tui_output.{h,cpp}
 ```
