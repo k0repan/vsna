@@ -279,7 +279,7 @@ void TuiApp::submit()
 
 	if (execute_command(text))
 	{
-	    clientCLI_.disconnectClient();
+		clientCLI_.disconnectClient();
 		App::quit();
 	}
 

@@ -39,7 +39,7 @@ template <Level l, class... Args> struct print<l, const char *, Args...>
 		}
 		// TODO: add log file write
 		TUI::print(std::format("[ {} ] {} : line {}  {}", levelString, loc.file_name(), loc.line(),
-		             std::vformat(msg, std::make_format_args(args...))));
+		                       std::vformat(msg, std::make_format_args(args...))));
 	}
 };
 
