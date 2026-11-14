@@ -5,13 +5,12 @@
 #include "helper.h"
 #include "types.h"
 
-namespace CLI
-{
+namespace CLI {
 // split str in name and args
 inline std::pair<std::string, STRING_VECTOR> parseArgs(STRING_ARG input)
 {
-    STRING_VECTOR args = split(input);
-    return { args[0], STRING_VECTOR(args.begin() + 1, args.end()) };
+	STRING_VECTOR args = split(input);
+	return { args[0], STRING_VECTOR(args.begin() + 1, args.end()) };
 }
 
 inline Config CLIParse(int argc, char **argv)
@@ -51,7 +50,7 @@ inline Config CLIParse(int argc, char **argv)
 
 inline constexpr void print(STRING_ARG str)
 {
-    std::cout << str << std::endl;
+	std::cout << str << std::endl;
 }
 
 }

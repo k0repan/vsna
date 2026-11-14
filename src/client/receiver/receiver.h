@@ -17,7 +17,10 @@ class Receiver : public std::enable_shared_from_this<Receiver> {
 	Receiver() : _io_context(max_threads), _acceptor(_io_context), _config()
 	{}
 	void run();
-	void stop() { _io_context.stop(); };
+	void stop()
+	{
+		_io_context.stop();
+	};
 
   private:
 	Config _config;

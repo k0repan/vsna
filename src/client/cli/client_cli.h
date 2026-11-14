@@ -20,18 +20,18 @@ class ClientCLI {
 	bool invoke(STRING_ARG input);
 	bool isClientConnected() const
 	{
-	    return _client.isConnected();
+		return _client.isConnected();
 	};
 	void disconnectClient()
 	{
-	    _client.disconnect();
+		_client.disconnect();
 	}
 	void setConfig(const Config& config)
 	{
-	    _client.setConfig(config);
+		_client.setConfig(config);
 	}
 	Config getConfig() const
 	{
-	    return _client.getConfig();
+		return _client.getConfig();
 	}
 };

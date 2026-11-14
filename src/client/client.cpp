@@ -60,7 +60,7 @@ void Client::connect(ARG_VECTOR args)
 	std::string line;
 	TUI::print("Connected. Type messages to send (type 'quit' to disconnect):\n");
 	_is_connected = true;
-	//while (std::getline(std::cin, line))
+	// while (std::getline(std::cin, line))
 	//{
 	//	if (line == "quit")
 	//	{
@@ -70,29 +70,37 @@ void Client::connect(ARG_VECTOR args)
 	//	{
 	//		_session->post_write(line);
 	//	}
-	//}
+	// }
 
 	// Cleanup
-	//disconnect();
+	// disconnect();
 }
 
 void Client::sendMsg(ARG_VECTOR args)
 {
-    if (!_session) { TUI::print_err("Not connected. Use 'connect' first."); return; }
-    std::string msg = join(args, " ");
-    if (msg.empty()) { TUI::print_err("Usage: send <message>"); return; }
-    _session->post_write(msg);
-    TUI::print("You: " + msg);
+	if (!_session)
+	{
+		TUI::print_err("Not connected. Use 'connect' first.");
+		return;
+	}
+	std::string msg = join(args, " ");
+	if (msg.empty())
+	{
+		TUI::print_err("Usage: send <message>");
+		return;
+	}
+	_session->post_write(msg);
+	TUI::print("You: " + msg);
 }
 
 void Client::disconnect()
 {
-    if (!_is_connected)
-    {
-        TUI::print_err("Client is not connected.");
-        return;
-    }
-    TUI::print("Disconnecting...");
+	if (!_is_connected)
+	{
+		TUI::print_err("Client is not connected.");
+		return;
+	}
+	TUI::print("Disconnecting...");
 	_io_context.stop();
 
 	// Wait for io thread to finish

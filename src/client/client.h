@@ -21,15 +21,18 @@ class Client {
 
 	void start_receiver()
 	{
-        if (_receiver || _receiver_thread.joinable()) return;
-        _receiver = std::make_shared<Receiver>();
-        _receiver_thread = std::thread([r = _receiver] { r->run(); });
+		if (_receiver || _receiver_thread.joinable())
+			return;
+		_receiver = std::make_shared<Receiver>();
+		_receiver_thread = std::thread([r = _receiver] { r->run(); });
 	}
-	
+
 	~Client()
 	{
-        if (_receiver) _receiver->stop();
-        if (_receiver_thread.joinable()) _receiver_thread.join();
+		if (_receiver)
+			_receiver->stop();
+		if (_receiver_thread.joinable())
+			_receiver_thread.join();
 	}
 
 	void setConfig(const Config& config)
@@ -44,7 +47,7 @@ class Client {
 	bool isConnected() const
 	{
 		return _is_connected;
-	}	
+	}
 
 	void connect(ARG_VECTOR);
 	void print() const;

@@ -27,7 +27,8 @@ void ReceiverSession::on_accept(beast::error_code ec)
 void ReceiverSession::do_read()
 {
 	// Read a message into the buffer
-	_ws.async_read(_buffer, beast::bind_front_handler(&ReceiverSession::on_read, shared_from_this()));
+	_ws.async_read(_buffer,
+	               beast::bind_front_handler(&ReceiverSession::on_read, shared_from_this()));
 }
 
 void ReceiverSession::on_read(beast::error_code ec, std::size_t bytes_transferred)

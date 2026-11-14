@@ -72,7 +72,7 @@ void Receiver::on_accept(beast::error_code ec, tcp::socket socket)
 	else
 	{
 		TUI::print("Accepted " + socket.remote_endpoint().address().to_string() + ':'
-		          + std::to_string(socket.remote_endpoint().port()));
+		           + std::to_string(socket.remote_endpoint().port()));
 
 		// Create the session and run it
 		std::make_shared<ReceiverSession>(std::move(socket))->run();
