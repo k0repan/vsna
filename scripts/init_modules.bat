@@ -53,15 +53,6 @@ vcpkg integrate install
 popd
 echo -- Installed Boost
 
-curl -L -f -o "%ROOT%libs\CLI11.hpp" https://github.com/CLIUtils/CLI11/releases/download/v2.7.2/CLI11.hpp
-echo -- Installed CLI11
-
-curl -L -f -o "%ROOT%libs\json.hpp" https://github.com/nlohmann/json/releases/download/v3.12.0/json.hpp
-echo -- Installed nlohmann/json
-
-curl -L -f -o "%ROOT%libs\cpptui.hpp" https://raw.githubusercontent.com/jonoton/cpp-tui/v1.12.0/cpptui.hpp
-echo -- Installed cpptui
-
 goto :cmd_ending
 
 :cmd_clean
